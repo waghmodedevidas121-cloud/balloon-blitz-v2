@@ -44,6 +44,66 @@
 })();
 
 /* ---------------------------------------------------------------------------
+   V2 ENHANCEMENT: UI skin layer.
+   Loads css/enhance.css (SVG textures, glass cards, 3D buttons) on top of the
+   original stylesheet and upgrades the bottom-nav markup so each button has a
+   separate icon + label element that the skin can style.
+   Purely additive: no existing engine/UI code is modified.
+--------------------------------------------------------------------------- */
+(function () {
+  // 1. Stylesheet — injected as early as possible to avoid a flash of old UI.
+  (function injectSkin() {
+    if (document.querySelector("link[data-bb-skin]")) return;
+    var l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = "css/enhance.css";
+    l.setAttribute("data-bb-skin", "1");
+    (document.head || document.documentElement).appendChild(l);
+  })();
+
+  function ready(fn) {
+    if (document.readyState === "loading")
+      document.addEventListener("DOMContentLoaded", fn);
+    else fn();
+  }
+
+  // 2. Bottom nav: "🏠<br>HOME" -> <span class=nav-ico>🏠</span><span class=nav-lbl>HOME</span>
+  function upgradeNav() {
+    var nav = document.getElementById("bottomNav");
+    if (!nav) return;
+    Array.prototype.forEach.call(nav.querySelectorAll("button"), function (b) {
+      if (b.__bbSkinned) return;
+      b.__bbSkinned = true;
+      try {
+        if (b.querySelector(".nav-ico")) return;
+        var ico = "", lbl = "";
+        var parts = b.innerHTML.split(/<br\s*\/?>/i);
+        if (parts.length > 1) {
+          ico = parts[0].trim();
+          lbl = parts.slice(1).join(" ").trim();
+        } else if (b.children.length === 0) {
+          // no <br>: split leading emoji/symbol from the text label
+          var m = /^\s*(\S+?)\s+([\s\S]+)$/.exec(b.textContent || "");
+          if (!m) return;
+          ico = m[1];
+          lbl = m[2].trim();
+        } else return;
+        if (!ico || !lbl) return;
+        b.innerHTML =
+          '<span class="nav-ico">' + ico + '</span>' +
+          '<span class="nav-lbl">' + lbl + '</span>';
+      } catch (e) {}
+    });
+  }
+
+  ready(function () {
+    upgradeNav();
+    // re-run after the UI finishes its first render pass
+    setTimeout(upgradeNav, 600);
+  });
+})();
+
+/* ---------------------------------------------------------------------------
    V2 ENHANCEMENT: auto-hide / auto-show bottom navigation bar.
    - Scroll DOWN  -> nav slides away (more screen for content)
    - Scroll UP / reach top / tap near bottom edge -> nav slides back

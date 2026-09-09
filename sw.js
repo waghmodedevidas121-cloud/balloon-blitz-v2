@@ -1,12 +1,15 @@
 /* BalloonBlitz V2 service worker — offline-first app shell.
    V2 note: icons + mp3 files live on the original project's Pages host, so they
    are NOT precached here (a 404 in addAll would break the whole install). */
-const CACHE = "balloon-blitz-v2-2";
+const CACHE = "balloon-blitz-v2-3";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.json",
   "./css/style.css",
+  "./css/enhance.css",
+  "./assets/tex/sky.svg", "./assets/tex/noise.svg",
+  "./assets/tex/balloons-pattern.svg", "./assets/tex/hero-balloons.svg",
   "./data/content.js",
   "./js/save.js", "./js/audio.js", "./js/music.js", "./js/ads.js",
   "./js/player.js", "./js/economy.js", "./js/achievements.js", "./js/rewards.js",
