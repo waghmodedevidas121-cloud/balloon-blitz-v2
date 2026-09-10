@@ -4,21 +4,22 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#070a18" />
+<meta name="theme-color" content="#8FD3FF" />
 <link rel="manifest" href="manifest.json" />
-<link rel="apple-touch-icon" href="https://waghmodedevidas121-cloud.github.io/balloon-blitz/assets/icon-192.png" />
-<link rel="icon" type="image/png" href="https://waghmodedevidas121-cloud.github.io/balloon-blitz/assets/icon-192.png" />
-<title>Balloon Blitz V2 — Game Studio Base</title>
+<link rel="apple-touch-icon" href="assets/tex/icon.svg" />
+<link rel="icon" type="image/svg+xml" href="assets/tex/icon.svg" />
+<title>Balloon Blitz — Sky Realms</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Fredoka:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/cozy.css" id="bbCozyCss" />
 </head>
 <body>
 <div id="splashScreen">
   <div class="splash-logo">BALLOON<br><span class="splash-blitz">BLITZ</span></div>
   <div class="splash-loader-bar"><div class="splash-loader-fill"></div></div>
-  <div class="splash-text">INITIALIZING...</div>
+  <div class="splash-text">Waking the sky...</div>
 </div>
 <div id="bgDecor"></div>
 <canvas id="gameCanvas"></canvas>
@@ -96,7 +97,7 @@
   <div class="mobile-card hh-stage">
     <div class="hh-hero">
       <div class="hh-logo"><span class="hh-logo-top">BALLOON</span><span class="hh-logo-main">BLITZ</span></div>
-      <div class="hh-tag">POP • COMBO • CONQUER</div>
+      <div class="hh-tag">EXPLORE • POP • DISCOVER</div>
     </div>
 
     <!-- Big 3D Play Button -->
@@ -222,7 +223,7 @@
 <div class="overlay-view hidden" id="shopScreen">
   <div class="mobile-card">
     <h2 style="font-size:22px;font-weight:900">🛒 SHOP</h2>
-    <div class="wallet"><div>🪙 <span id="coinBal">0</span></div><div>💎 <span id="gemBal">0</span></div></div>
+    <div class="wallet"><div>🪙 <span id="shopCoinBal">0</span></div><div>💎 <span id="shopGemBal">0</span></div></div>
     <div class="section-title">Balloon Skins</div>
     <div class="ach-list" id="skinsList"></div>
     <div class="section-title">Pop Effects</div>
@@ -348,7 +349,7 @@
       🎁 <b>Gift Balloon</b> foda → khali padnara gift <b>catch</b> kara: <b>Gatling</b>, <b>Triple Spread</b>, <b>Laser</b>, <b>+Time / +Life</b>!<br/>
       ♾️ <b>Survival:</b> escaped balloons cost ❤️. Every 20 pops = WAVE UP.<br/>
       🪙 Earn coins per pop — spend them in the <b>Shop</b> on skins & effects.<br/>
-      🎵 Music: Kevin MacLeod (incompetech.com, CC-BY 4.0).
+      🎵 Music: procedural sky-realm soundtrack, generated live in your browser.
     </div>
     <div class="mobile-actions" style="margin-top:12px"><button class="btn-tap primary" id="btnCloseHowTo">Got it!</button></div>
   </div>
@@ -380,12 +381,40 @@
 <script src="js/rewards.js"></script>
 <script src="js/leaderboard.js"></script>
 <script src="js/music.js"></script>
+<script src="js/sky.js"></script>
 <script src="js/ads.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/engine2.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/main.js"></script>
 <script>
+/* Sky Realms shell glue:
+   1. keep css/cozy.css last in the cascade (js/main.js injects the skin
+      stylesheet at runtime, so the cozy layer is re-appended after it)
+   2. let the living sky follow the campaign world */
+(function () {
+  function cozyLast() {
+    var l = document.getElementById("bbCozyCss");
+    if (l && l.parentNode) l.parentNode.appendChild(l);
+  }
+  window.addEventListener("load", function () {
+    cozyLast();
+    setTimeout(cozyLast, 900);
+    setTimeout(cozyLast, 2600);
+  });
+
+  var seen = 0;
+  setInterval(function () {
+    if (!window.BB || !BB.Sky) return;
+    var w = 0;
+    try { w = (window.gameState && gameState.world) | 0; } catch (e) { w = 0; }
+    if (w && w !== seen) {
+      seen = w;
+      BB.Sky.setWorld(((w - 1) % 5) + 1);
+    }
+  }, 1200);
+})();
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
     navigator.serviceWorker.register("sw.js").catch(function () {});
