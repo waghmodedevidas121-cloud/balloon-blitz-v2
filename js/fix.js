@@ -13,9 +13,8 @@
  *     sky now freezes while a run is live and comes back alive in the menus.
  *  4. body.bb-playing lets css/fix.css drop the paper-grain / vignette
  *     overlays that were compositing on top of the gameplay canvas.
- *  5. #btnClaimDaily had two click listeners bound in BB.UI.bind(), so one tap
- *     called BB.Rewards.claimDaily() twice and the handlers fought over the
- *     button label. Rebound to exactly one handler.
+ *  5. BB.UI.bind() now guards #btnClaimDaily and keeps its claim behavior in
+ *     one handler, so one tap cannot consume two daily rewards.
  *  6. A throw inside a cosmetic subsystem (music / sky / ads / audio) used to
  *     abort main.js's single boot try-block BEFORE BB.Engine.init(), which
  *     left the game completely dead. Those calls are shielded now, so the
