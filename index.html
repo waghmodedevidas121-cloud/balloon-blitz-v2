@@ -12,9 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Fredoka:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
-<link rel="stylesheet" href="css/style.css" />
-<link rel="stylesheet" href="css/cozy.css" id="bbCozyCss" />
-<link rel="stylesheet" href="css/fix.css" id="bbFixCss" />
+<link rel="stylesheet" href="css/app.css" />
 </head>
 <body>
 <div id="splashScreen">
@@ -57,11 +55,11 @@
 </div>
 
 <nav id="bottomNav" style="display:none">
-  <button data-screen="homeScreen">🏠<br/>Home</button>
-  <button data-screen="levelSelectScreen">🎯<br/>Maps</button>
-  <button data-screen="shopScreen">🛒<br/>Shop</button>
-  <button data-screen="boardScreen">🏅<br/>Ranks</button>
-  <button data-screen="dashboardScreen">👤<br/>Profile</button>
+  <button data-screen="homeScreen"><span class="nav-ico">🏠</span><span class="nav-lbl">Home</span></button>
+  <button data-screen="levelSelectScreen"><span class="nav-ico">🎯</span><span class="nav-lbl">Maps</span></button>
+  <button data-screen="shopScreen"><span class="nav-ico">🛒</span><span class="nav-lbl">Shop</span></button>
+  <button data-screen="boardScreen"><span class="nav-ico">🏅</span><span class="nav-lbl">Ranks</span></button>
+  <button data-screen="dashboardScreen"><span class="nav-ico">👤</span><span class="nav-lbl">Profile</span></button>
 </nav>
 
 <div class="overlay-view" id="homeScreen">
@@ -333,7 +331,7 @@
     <div class="set-row"><div><div class="set-label">🎵 Music</div><div class="set-sub">Soft ambient BGM</div></div><button class="toggle on" id="setMusicBtn">ON</button></div>
     <div class="set-row"><div><div class="set-label">⛶ Fullscreen</div><div class="set-sub">Immersive play</div></div><button class="toggle" id="setFullBtn">GO</button></div>
     <div class="set-row"><div><div class="set-label">❓ How To Play</div><div class="set-sub">Rules & balloon guide</div></div><button class="toggle" id="btnHowTo">VIEW</button></div>
-    <div class="set-row"><div><div class="set-label">🔄 Reset Progress</div><div class="set-sub">Wipe stars & scores</div></div><button class="toggle" id="btnResetProgress" style="color:#ff5e7a;border-color:#ff5e7a">RESET</button></div>
+    <div class="set-row"><div><div class="set-label">🔄 Reset Progress</div><div class="set-sub">Wipe stars & scores</div></div><button class="toggle" id="btnResetProgress">RESET</button></div>
     <div class="mobile-actions" style="margin-top:10px"><button class="btn-tap primary" id="btnCloseSettings">Done ✓</button></div>
   </div>
 </div>
@@ -341,7 +339,7 @@
 <div class="overlay-view hidden" id="howToModal">
   <div class="mobile-card" style="max-width:400px;text-align:left">
     <h2 style="font-size:20px;font-weight:900;margin-bottom:10px;text-align:center">❓ HOW TO PLAY</h2>
-    <div style="font-size:12px;line-height:1.7;color:#dfe7ff">
+    <div style="font-size:12px;line-height:1.7">
       👆 <b>Tap / Drag / Multi-touch</b> to pop balloons.<br/>
       🔴 10 • 🔵 20 • 🟢 30 • 🟡 <b>Gold 100</b><br/>
       💣 <b>Bomb</b> = chain explosion.<br/>
@@ -359,7 +357,7 @@
 <div class="overlay-view hidden" id="dailyModal">
   <div class="mobile-card daily-reward-card" style="max-width:400px">
     <h2 style="font-size:22px;font-weight:900;letter-spacing:1px;margin-bottom:2px">🎁 DAILY REWARDS</h2>
-    <p style="font-size:11px;color:var(--gold);font-weight:800;margin-bottom:12px" id="dailyRewardText">Login 7 days in a row for the Mega Chest!</p>
+    <p style="font-size:11px;font-weight:800;margin-bottom:12px" id="dailyRewardText">Login 7 days in a row for the Mega Chest!</p>
     
     <!-- 7-Day Reward Cards Grid -->
     <div class="daily-calendar-grid" id="dailyCalendarGrid">
@@ -392,25 +390,11 @@
      before main.js's boot timer fires -->
 <script src="js/fix.js"></script>
 <script>
-/* Sky Realms shell glue: keep the hand-written layers last in the cascade,
-   because js/main.js injects its skin stylesheet at runtime.
+/* Shell glue. All styling now lives in css/app.css, so the old layer-order
+   hack (re-appending <link> tags on a timer) is gone.
    The world -> realm sync used to live here and was dead code: it read
    gameState.world, but gameState is a string ("HOME"/"PLAYING"/"PAUSED").
    js/fix.js now derives the realm from currentLevelId + Content.WORLDS. */
-(function () {
-  function layersLast() {
-    ["bbCozyCss", "bbFixCss"].forEach(function (id) {
-      var l = document.getElementById(id);
-      if (l && l.parentNode) l.parentNode.appendChild(l);
-    });
-  }
-  window.addEventListener("load", function () {
-    layersLast();
-    setTimeout(layersLast, 900);
-    setTimeout(layersLast, 2600);
-  });
-})();
-
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
     navigator.serviceWorker.register("sw.js").catch(function () {});
