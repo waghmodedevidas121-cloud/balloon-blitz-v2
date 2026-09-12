@@ -1,0 +1,111 @@
+/* Balloon Blitz · Sky Realms — FIX PASS 2
+   Loads after css/cozy.css. Bug fixes only: contrast, stacking, hit-testing
+   and safe areas. No layout redesign, no game logic. */
+
+/* ------------------------------------------------------ gameplay hygiene
+   Nothing decorative may paint or hit-test over the play canvas. */
+body.bb-playing::before,
+body.bb-playing::after,
+body.bb-playing #bgDecor::before,
+body.bb-playing #bbNavPeek { display: none !important; }
+
+/* the invisible bottom reveal strip must not eat taps while it is idle */
+#bbNavPeek { pointer-events: none !important; }
+#bbNavPeek.on { pointer-events: auto !important; }
+
+/* notched phones: viewport-fit=cover put the nav under the home indicator */
+@supports (margin: env(safe-area-inset-bottom)) {
+  #bottomNav { margin-bottom: env(safe-area-inset-bottom) !important; }
+}
+
+/* -------------------------------------------- profile hero + editor sheet
+   js/main.js injects these with the old dark-navy skin, while cozy.css
+   sweeps every overlay text colour to ink -> dark ink on dark navy. */
+.bbp-hero {
+  background: linear-gradient(180deg, #FFFDF7, #F3E4C8) !important;
+  border: 1px solid rgba(59, 46, 42, .12) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 12px 26px rgba(59, 46, 42, .16) !important;
+}
+.bbp-hero::after {
+  opacity: .4 !important;
+  background: radial-gradient(70% 60% at 96% 0%, rgba(245, 165, 36, .32), transparent 70%) !important;
+}
+.bbp-av {
+  background: radial-gradient(circle at 32% 26%, #FFF3D2, #F5A524 78%) !important;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, .65), 0 8px 16px rgba(59, 46, 42, .18) !important;
+}
+.bbp-name { color: #3B2E2A !important; }
+.bbp-rank {
+  color: #4A2C10 !important;
+  background: linear-gradient(180deg, #FFD98A, #F5A524) !important;
+}
+.bbp-xprow, .bbp-lab, .bbp-sl { color: #6E5B54 !important; }
+.bbp-h { color: #3B2E2A !important; }
+.bbp-track {
+  background: rgba(59, 46, 42, .12) !important;
+  box-shadow: inset 0 1px 2px rgba(59, 46, 42, .18) !important;
+}
+.bbp-fill {
+  background: linear-gradient(90deg, #F5A524, #FFD98A) !important;
+  box-shadow: none !important;
+}
+.bbp-edit, .bbp-btn {
+  color: #3B2E2A !important;
+  background: linear-gradient(180deg, #FFFDF7, #F3E4C8) !important;
+  border: 1px solid rgba(59, 46, 42, .16) !important;
+  box-shadow: 0 3px 0 rgba(59, 46, 42, .12), inset 0 1px 0 #fff !important;
+}
+.bbp-btn.go {
+  color: #4A2C10 !important;
+  background: linear-gradient(180deg, #FFD98A, #F5A524) !important;
+  border-color: rgba(150, 88, 20, .35) !important;
+  box-shadow: 0 4px 0 #B96A1E, inset 0 1px 0 rgba(255, 255, 255, .7) !important;
+}
+.bbp-stat {
+  background: rgba(255, 247, 230, .92) !important;
+  border: 1px solid rgba(59, 46, 42, .12) !important;
+}
+.bbp-sv { color: #3B2E2A !important; }
+.bbp-sv.gold { color: #D9822B !important; }
+.bbp-input { background: #FFF7E6 !important; color: #3B2E2A !important; }
+.bbp-opt {
+  background: linear-gradient(180deg, #FFFDF7, #F3E4C8) !important;
+  border-color: rgba(59, 46, 42, .14) !important;
+  box-shadow: inset 0 1px 0 #fff !important;
+}
+.bbp-opt.sel {
+  border-color: #D9822B !important;
+  background: linear-gradient(180deg, #FFF3D2, #FFD98A) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 3px rgba(245, 165, 36, .28) !important;
+}
+
+/* ----------------------------------------------------------- splash bar */
+#splashScreen .splash-loader-bar {
+  background: rgba(59, 46, 42, .14) !important;
+  border: 1px solid rgba(59, 46, 42, .10) !important;
+  box-shadow: inset 0 1px 2px rgba(59, 46, 42, .14) !important;
+}
+#splashScreen .splash-loader-fill {
+  background: linear-gradient(90deg, #F5A524, #FFD98A) !important;
+}
+
+/* -------------------------------------------------- daily reward states */
+#dailyCalendarGrid .daily-day-card.mega-card {
+  background: linear-gradient(180deg, #FFF3D2, #FFE0A0) !important;
+  border-color: rgba(217, 130, 43, .45) !important;
+}
+#dailyCalendarGrid .daily-day-card:not(.claimed):not(.active) {
+  opacity: .82 !important;
+}
+#dailyCalendarGrid .daily-day-card.active {
+  transform: translateY(-2px);
+}
+#dailyCalendarGrid .daily-day-num { font-weight: 800 !important; }
+
+/* ------------------------------------------------------------ hud polish */
+#mobileHud .hud-btn-circle {
+  background: linear-gradient(180deg, #FFFDF7, #F3E4C8) !important;
+  border: 1px solid rgba(59, 46, 42, .14) !important;
+  color: #3B2E2A !important;
+  box-shadow: 0 4px 10px rgba(59, 46, 42, .16), inset 0 1px 0 #fff !important;
+}
