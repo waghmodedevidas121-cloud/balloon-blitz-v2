@@ -525,8 +525,11 @@ BB.UI = (function () {
     if (!rows.length) el.innerHTML = "<p style='color:var(--muted);font-size:12px'>No scores yet — go play!</p>";
     rows.forEach(function (r, i) {
       var d = document.createElement("div"); d.className = "ach-row" + (i === 0 ? " unlocked" : "");
-      d.innerHTML = "<div class='ach-ico'>#" + (i + 1) + "</div><div><div class='ach-name'>" + r.n +
-        "</div></div><div class='ach-state'>" + r.score + "</div>";
+      var rank = document.createElement("div"); rank.className = "ach-ico"; rank.textContent = "#" + (i + 1);
+      var info = document.createElement("div");
+      var name = document.createElement("div"); name.className = "ach-name"; name.textContent = String(r.n || "PLAYER");
+      var score = document.createElement("div"); score.className = "ach-state"; score.textContent = String(Number(r.score) || 0);
+      d.appendChild(rank); info.appendChild(name); d.appendChild(info); d.appendChild(score);
       el.appendChild(d);
     });
     if (tab === "global") {
@@ -621,7 +624,9 @@ BB.UI = (function () {
       gameState = "HOME";
       show("dailyModal");
     });
-    $("btnClaimDaily").addEventListener("click", function () {
+    if ($("btnClaimDaily") && !$("btnClaimDaily").__bbDailyBound) {
+      $("btnClaimDaily").__bbDailyBound = true;
+      $("btnClaimDaily").addEventListener("click", function () {
       var r = BB.Rewards.claimDaily();
       if (r) {
         BB.Audio.sound.victory();
@@ -631,7 +636,8 @@ BB.UI = (function () {
         announce("🎁 REWARD CLAIMED!", "+" + (r.prize.coins ? r.prize.coins + " Coins" : r.prize.gems + " Gems"), "#ffd000");
         setTimeout(function () { gameState = "HOME"; show("homeScreen"); }, 1400);
       }
-    });
+      });
+    }
     $("btnCloseSettings").addEventListener("click", function () { show("homeScreen"); gameState = "HOME"; });
     $("btnHowTo").addEventListener("click", function () { show("howToModal"); });
     $("btnCloseHowTo").addEventListener("click", function () { show("settingsModal"); });
