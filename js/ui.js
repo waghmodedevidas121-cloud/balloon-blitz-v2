@@ -627,15 +627,15 @@ BB.UI = (function () {
     if ($("btnClaimDaily") && !$("btnClaimDaily").__bbDailyBound) {
       $("btnClaimDaily").__bbDailyBound = true;
       $("btnClaimDaily").addEventListener("click", function () {
-      var r = BB.Rewards.claimDaily();
-      if (r) {
-        BB.Audio.sound.victory();
-        renderDailyGrid();
-        wallet();
-        refreshHome();
-        announce("🎁 REWARD CLAIMED!", "+" + (r.prize.coins ? r.prize.coins + " Coins" : r.prize.gems + " Gems"), "#ffd000");
-        setTimeout(function () { gameState = "HOME"; show("homeScreen"); }, 1400);
-      }
+        var r = BB.Rewards.claimDaily();
+        if (r) {
+          BB.Audio.sound.victory();
+          renderDailyGrid();
+          wallet();
+          refreshHome();
+          announce("🎁 REWARD CLAIMED!", "+" + (r.prize.coins ? r.prize.coins + " Coins" : r.prize.gems + " Gems"), "#ffd000");
+          setTimeout(function () { gameState = "HOME"; show("homeScreen"); }, 1400);
+        }
       });
     }
     $("btnCloseSettings").addEventListener("click", function () { show("homeScreen"); gameState = "HOME"; });
@@ -731,16 +731,6 @@ BB.UI = (function () {
     });
     document.querySelectorAll(".board-tab").forEach(function (t) {
       t.addEventListener("click", function () { renderBoard(t.dataset.tab); });
-    });
-    $("btnClaimDaily").addEventListener("click", function () {
-      var r = BB.Rewards.claimDaily();
-      if (r) {
-        $("dailyRewardText").innerText = "Day " + r.streak + ": " +
-          (r.prize.coins ? r.prize.coins + " coins 🪙" : r.prize.gems + " gems 💎") + " claimed! ✓";
-        $("btnClaimDaily").style.display = "none";
-        refreshHome();
-        setTimeout(function () { gameState = "HOME"; show("homeScreen"); }, 1200);
-      }
     });
     $("btnDailyLater").addEventListener("click", function () { show("homeScreen"); });
     // PLAY burst (display only)
