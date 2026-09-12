@@ -17,6 +17,8 @@ const CORE = [
   "./assets/tex/balloons-pattern.svg",
   "./assets/tex/hero-balloons.svg",
   "./assets/tex/icon.svg",
+  "./assets/icon-192.png",
+  "./assets/icon-512.png",
   "./data/content.js",
   "./js/save.js",
   "./js/audio.js",
