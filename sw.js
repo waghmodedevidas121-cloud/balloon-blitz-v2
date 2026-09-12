@@ -2,7 +2,7 @@
    Cache-first for static shell, network-first for navigations so a new
    build is picked up on the next visit. Every entry is added one-by-one so
    a single missing file can never fail the whole install. */
-const CACHE = "balloon-blitz-v2-11";
+const CACHE = "balloon-blitz-v2-12";
 
 const CORE = [
   "./",
