@@ -51,6 +51,9 @@ BB.Save = (function () {
         if (!data.slingshotProgress || !data.slingshotProgress[1]) {
           data.slingshotProgress = Object.assign({ 1: { unlocked: true, stars: 0 } }, data.slingshotProgress || {});
         }
+        if (!data.achievements || typeof data.achievements !== "object") data.achievements = {};
+        if (!data.missions || typeof data.missions !== "object") data.missions = {};
+        if (!Array.isArray(data.board)) data.board = [];
       } else if (migrateOld()) {
         save(); // persist migrated copy under new key; old key left intact as backup
       }
