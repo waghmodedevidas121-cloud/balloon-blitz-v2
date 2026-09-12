@@ -4,7 +4,7 @@
 window.BB = window.BB || {};
 BB.Ads = (function () {
   var cfg = {
-    enabled: true,          // master switch (false = everything no-ops)
+    enabled: false,         // stays off until a real provider is configured
     mode: "test",           // "test" | "live"
     cooldownSec: 90,        // gap between any two interstitials
     minSessionGames: 2,     // no interstitial before N runs
@@ -13,7 +13,7 @@ BB.Ads = (function () {
     bannerSlotId: "",       // e.g. "/xxxx/yyyy" or element id from provider
     rewardedSlotId: ""
   };
-  var st = { lastShown: 0, runs: 0, rewardedThisRun: 0 };
+  var st = { lastShown: 0, runs: 0, rewardedThisRun: 0, rewardedPending: false };
 
   /* ---- PROVIDER HOOKS (fill when AdSense is approved) ----
      Each must call done(success). Keep every call async. */
@@ -84,13 +84,24 @@ BB.Ads = (function () {
   /* Rewarded: optionally user tap var. Reward fact ad complete zalyavar. */
   function showRewarded(onReward, onFail) {
     onReward = onReward || function () {}; onFail = onFail || function () {};
-    if (!ready() || st.rewardedThisRun >= cfg.rewardedPerRun) { onFail(); return false; }
-    st.rewardedThisRun++;
+    if (!ready() || st.rewardedPending || st.rewardedThisRun >= cfg.rewardedPerRun) { onFail(); return false; }
+    st.rewardedPending = true;
+    var settled = false;
+    function finish(ok) {
+      if (settled) return;
+      settled = true;
+      st.rewardedPending = false;
+      if (ok) {
+        st.rewardedThisRun++;
+        onReward();
+      } else onFail();
+    }
     if (cfg.mode === "test") {
-      TEST_REWARDED(function (ok) { ok ? onReward() : onFail(); });
+      TEST_REWARDED(finish);
       return true;
     }
-    PROVIDER.rewarded(function (ok) { ok ? onReward() : onFail(); });
+    try { PROVIDER.rewarded(function (ok) { finish(!!ok); }); }
+    catch (e) { finish(false); }
     return true;
   }
 
@@ -100,6 +111,7 @@ BB.Ads = (function () {
   }
   function goLive(bannerSlot, rewardedSlot) {
     cfg.mode = "live";
+    cfg.enabled = true;
     if (bannerSlot) cfg.bannerSlotId = bannerSlot;
     if (rewardedSlot) cfg.rewardedSlotId = rewardedSlot;
     try { PROVIDER.banner(); } catch (e) {}
