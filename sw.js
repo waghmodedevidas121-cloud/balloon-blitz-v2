@@ -2,7 +2,7 @@
    Cache-first for static shell, network-first for navigations so a new
    build is picked up on the next visit. Every entry is added one-by-one so
    a single missing file can never fail the whole install. */
-const CACHE = "balloon-blitz-v2-6";
+const CACHE = "balloon-blitz-v2-7";
 
 const CORE = [
   "./",
@@ -11,6 +11,7 @@ const CORE = [
   "./css/style.css",
   "./css/enhance.css",
   "./css/cozy.css",
+  "./css/fix.css",
   "./assets/tex/sky.svg",
   "./assets/tex/noise.svg",
   "./assets/tex/balloons-pattern.svg",
@@ -30,7 +31,8 @@ const CORE = [
   "./js/engine.js",
   "./js/engine2.js",
   "./js/ui.js",
-  "./js/main.js"
+  "./js/main.js",
+  "./js/fix.js"
 ];
 
 self.addEventListener("install", (e) => {
