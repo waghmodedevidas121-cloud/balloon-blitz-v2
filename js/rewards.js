@@ -1,8 +1,16 @@
 /* BB.Rewards — daily login + streak + daily missions. All local, expandable. */
 window.BB = window.BB || {};
 BB.Rewards = (function () {
-  function today() { return new Date().toISOString().slice(0, 10); }
-  function yesterday() { var t = new Date(Date.now() - 864e5); return t.toISOString().slice(0, 10); }
+  function dateKey(d) {
+    var y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+  function today() { return dateKey(new Date()); }
+  function yesterday() {
+    var now = new Date();
+    return dateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  }
   function dailyStatus() {
     var r = BB.Save.data.rewards || {};
     var last = r.lastDaily || "";
