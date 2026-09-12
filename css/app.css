@@ -8,6 +8,11 @@
    appears only where a runtime-injected <style> (js/main.js) or an inline
    style attribute in index.html has to be overridden.
 
+   Scrolling model: one scroller per screen. .overlay-view is a column flex
+   container that scrolls; cards inside it grow naturally. touch-action is
+   only "none" on the playfield and the HUD, so every menu, sheet and modal
+   can be dragged with a finger.
+
    Art direction: doc 03 — Cozy Storybook. Warm parchment UI floating over
    the living sky painted by js/sky.js. No neon, no dark navy.
    ========================================================================= */
@@ -70,7 +75,6 @@
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: none;
   font-family: var(--font-body);
 }
 
@@ -83,6 +87,8 @@ html, body {
   background: var(--sky);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  /* no page scroll or double-tap zoom, but children may still scroll */
+  touch-action: manipulation;
 }
 
 h1, h2, h3, h4, .btn-tap, .hh-play, .map-tab, .board-tab, .smc-title,
@@ -92,9 +98,23 @@ h1, h2, h3, h4, .btn-tap, .hh-play, .map-tab, .board-tab, .smc-title,
 }
 h1, h2, h3 { text-shadow: 0 1px 0 rgba(255, 255, 255, .7); }
 
-/* menus must scroll by touch; only the play canvas swallows gestures */
-.overlay-view, .overlay-view *, .mobile-card, .mobile-card * { touch-action: pan-y; }
-#gameCanvas, #mobileHud, #bottomNav, #bottomNav * { touch-action: none; }
+/* ------------------------------------------------------ gestures
+   Only the playfield and the fixed chrome swallow gestures. Everything
+   that can scroll says so explicitly, including the sheets js/main.js
+   appends straight to <body>. */
+#gameCanvas, #bgDecor, #feverVignette, #flashOverlay, #touchRippleContainer,
+#mobileHud, #mobileHud *, #bottomNav, #bottomNav *, #bbNavPeek {
+  touch-action: none;
+}
+.overlay-view, .mobile-card, .bbp-modal, .bbp-sheet,
+.ach-list, .arcade-tiles-grid, .daily-calendar-grid {
+  touch-action: pan-y;
+}
+input, textarea, select {
+  user-select: text;
+  -webkit-user-select: text;
+  touch-action: manipulation;
+}
 
 /* --------------------------------------------------- stage: living sky */
 #bgDecor {
@@ -306,18 +326,39 @@ body.fever-active #feverVignette {
   50% { transform: translateY(-10px); }
 }
 
-/* ------------------------------------------------------- screens + cards */
+/* ------------------------------------------------------- screens + cards
+   Every screen is a column: one card, or a card plus whatever js/main.js
+   mounts above it. The screen is the scroller, so nothing can be clipped
+   out of reach. */
 .overlay-view {
   position: absolute;
   inset: 0;
   z-index: 20;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 12px 12px calc(96px + var(--sab));
+  justify-content: flex-start;
+  gap: 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: max(12px, calc(var(--sat) + 12px)) 12px calc(96px + var(--sab));
   color: var(--ink);
   background: transparent;
   transition: opacity .2s ease, transform .2s ease;
+}
+.overlay-view > * {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 400px;
+}
+/* short screens float in the middle; the auto margins collapse when the
+   content is taller than the screen, so the top never becomes unreachable */
+#levelCompleteScreen > *, #gameOverScreen > *, #pauseScreen > *,
+#settingsModal > *, #howToModal > *, #dailyModal > * {
+  margin-top: auto;
+  margin-bottom: auto;
 }
 .overlay-view.hidden {
   opacity: 0;
@@ -335,8 +376,6 @@ body.fever-active #feverVignette {
   position: relative;
   width: 100%;
   max-width: 400px;
-  max-height: 90vh;
-  overflow-y: auto;
   padding: 16px;
   text-align: center;
   background: linear-gradient(180deg, rgba(255, 253, 247, .96), rgba(247, 235, 212, .94));
@@ -345,9 +384,7 @@ body.fever-active #feverVignette {
   box-shadow: var(--inset), 0 2px 0 rgba(255, 255, 255, .5), 0 14px 28px rgba(59, 46, 42, .16);
   backdrop-filter: blur(4px) saturate(104%);
   -webkit-backdrop-filter: blur(4px) saturate(104%);
-  scrollbar-width: none;
 }
-.mobile-card::-webkit-scrollbar { display: none; }
 
 /* inline-style rescues (index.html sets legacy neon colours inline) */
 #mLevelCompleteTitle { color: var(--leaf-deep) !important; }
@@ -370,19 +407,19 @@ body.fever-active #feverVignette {
    living sky reads as the background; a soft scrim keeps text legible.
    ====================================================================== */
 #homeScreen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: flex-start;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  gap: 0;
   padding: calc(var(--sat) + 12px) 14px calc(var(--sab) + 96px);
   background: linear-gradient(180deg,
               rgba(255, 247, 230, .62) 0%,
               rgba(255, 247, 230, .34) 34%,
               rgba(255, 247, 230, .12) 68%,
               rgba(255, 247, 230, 0) 100%);
+}
+#homeScreen > * {
+  max-width: 420px;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 /* ---------------------------------------------------------- header row */
@@ -1297,16 +1334,11 @@ body.combo-active #hudComboPill { display: flex !important; }
 }
 
 /* ============================================ player profile (bbp-*)
-   js/main.js injects this sheet's markup together with its own dark
-   <style> block, so these declarations must stay !important. */
-.bbp-modal { background: rgba(59, 46, 42, .42) !important; }
-.bbp-sheet {
-  color: var(--ink) !important;
-  background: linear-gradient(180deg, var(--paper), var(--paper-2)) !important;
-  border: 1px solid var(--line) !important;
-  box-shadow: 0 18px 40px rgba(59, 46, 42, .28) !important;
-}
+   js/main.js injects this sheet's markup together with a small layout
+   <style> block, so these declarations stay !important. */
 .bbp-hero {
+  width: 100% !important;
+  margin: 0 0 12px !important;
   background: linear-gradient(180deg, var(--paper), var(--paper-2)) !important;
   border: 1px solid var(--line) !important;
   box-shadow: inset 0 1px 0 #fff, var(--shadow) !important;
@@ -1314,6 +1346,26 @@ body.combo-active #hudComboPill { display: flex !important; }
 .bbp-hero::after {
   opacity: .4 !important;
   background: radial-gradient(70% 60% at 96% 0%, rgba(245, 165, 36, .32), transparent 70%) !important;
+}
+/* the sheet scrolls as a whole, so the SAVE row is always reachable */
+.bbp-modal {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: calc(var(--sat) + 14px) 14px calc(var(--sab) + 14px) !important;
+  background: rgba(59, 46, 42, .42) !important;
+}
+.bbp-sheet {
+  max-height: none !important;
+  margin: auto 0 !important;
+  overflow: visible !important;
+  color: var(--ink) !important;
+  background: linear-gradient(180deg, var(--paper), var(--paper-2)) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: 0 18px 40px rgba(59, 46, 42, .28) !important;
 }
 .bbp-av {
   background: radial-gradient(circle at 32% 26%, #FFF3D2, var(--sun) 78%) !important;
