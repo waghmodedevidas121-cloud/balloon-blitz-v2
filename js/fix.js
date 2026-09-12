@@ -146,7 +146,7 @@
   }
 
   function hookStarts() {
-    var names = ["startLevel", "startBlitz", "startInfinite"];
+    var names = ["startLevel", "startBlitz", "startInfinite", "startPuzzle", "startSlingshot"];
     for (var i = 0; i < names.length; i++) {
       (function (n) {
         var f = window[n];
@@ -162,39 +162,12 @@
     }
   }
 
-  /* ------------------------------ 5. daily reward: exactly one listener */
-  function rebindDaily() {
-    var btn = $("btnClaimDaily");
-    if (!btn || btn.__bbOnce || !btn.parentNode) return;
-    var fresh = btn.cloneNode(true);
-    fresh.__bbOnce = true;
-    btn.parentNode.replaceChild(fresh, btn);
-    fresh.addEventListener("click", function () {
-      var r = null;
-      try { r = BB.Rewards.claimDaily(); } catch (e) {}
-      if (!r) return;
-      var prize = r.prize || {};
-      try { BB.Audio.sound.victory(); } catch (e) {}
-      try { BB.UI.refreshHome(); } catch (e) {}
-      try {
-        BB.UI.announce("\uD83C\uDF81 REWARD CLAIMED!",
-          prize.coins ? "+" + prize.coins + " Coins" : "+" + (prize.gems || 0) + " Gems",
-          "#D9822B");
-      } catch (e) {}
-      try { BB.UI.show("dailyModal"); } catch (e) {}
-      setTimeout(function () {
-        try { window.gameState = "HOME"; BB.UI.show("homeScreen"); } catch (e) {}
-      }, 1200);
-    });
-  }
-
   /* -------------------------------------------------------------- boot */
   function pass() {
     patchDecor();
     tidyDecor();
     watchDecor();
     hookStarts();
-    rebindDaily();
     tick();
   }
 
