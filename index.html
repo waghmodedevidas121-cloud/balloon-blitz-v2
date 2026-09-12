@@ -11,9 +11,10 @@
 <title>Balloon Blitz — Sky Realms</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Fredoka:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Fredoka:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
 <link rel="stylesheet" href="css/style.css" />
 <link rel="stylesheet" href="css/cozy.css" id="bbCozyCss" />
+<link rel="stylesheet" href="css/fix.css" id="bbFixCss" />
 </head>
 <body>
 <div id="splashScreen">
@@ -203,7 +204,7 @@
       </div>
     </div>
     <div id="slingshotMapContainer" style="display:none">
-      <div class="campaign-progress" id="slingshotProgress">Progress: 0/30 ⭐ • 0/10 cleared</div>
+      <div class="campaign-progress" id="slingshotProgress">Progress: 0/75 ⭐ • 0/25 cleared</div>
       <div class="arcade-tiles-grid" id="mSlingshotGrid"></div>
       <!-- Selected Slingshot Mission Card -->
       <div class="stage-mission-card slingshot-card-theme" id="slingshotMissionCard">
@@ -387,32 +388,27 @@
 <script src="js/engine2.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/main.js"></script>
+<!-- fix pass: must load after main.js so it can shield the boot chain
+     before main.js's boot timer fires -->
+<script src="js/fix.js"></script>
 <script>
-/* Sky Realms shell glue:
-   1. keep css/cozy.css last in the cascade (js/main.js injects the skin
-      stylesheet at runtime, so the cozy layer is re-appended after it)
-   2. let the living sky follow the campaign world */
+/* Sky Realms shell glue: keep the hand-written layers last in the cascade,
+   because js/main.js injects its skin stylesheet at runtime.
+   The world -> realm sync used to live here and was dead code: it read
+   gameState.world, but gameState is a string ("HOME"/"PLAYING"/"PAUSED").
+   js/fix.js now derives the realm from currentLevelId + Content.WORLDS. */
 (function () {
-  function cozyLast() {
-    var l = document.getElementById("bbCozyCss");
-    if (l && l.parentNode) l.parentNode.appendChild(l);
+  function layersLast() {
+    ["bbCozyCss", "bbFixCss"].forEach(function (id) {
+      var l = document.getElementById(id);
+      if (l && l.parentNode) l.parentNode.appendChild(l);
+    });
   }
   window.addEventListener("load", function () {
-    cozyLast();
-    setTimeout(cozyLast, 900);
-    setTimeout(cozyLast, 2600);
+    layersLast();
+    setTimeout(layersLast, 900);
+    setTimeout(layersLast, 2600);
   });
-
-  var seen = 0;
-  setInterval(function () {
-    if (!window.BB || !BB.Sky) return;
-    var w = 0;
-    try { w = (window.gameState && gameState.world) | 0; } catch (e) { w = 0; }
-    if (w && w !== seen) {
-      seen = w;
-      BB.Sky.setWorld(((w - 1) % 5) + 1);
-    }
-  }, 1200);
 })();
 
 if ("serviceWorker" in navigator) {
