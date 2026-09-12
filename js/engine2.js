@@ -192,6 +192,7 @@ function startPuzzle(id) {
   try { BB.Music.play("campaign"); } catch (e) {}
   BB.Ads.notifyRunStart(); lockInput(); currentPuzzleId = id;
   gameMode = "PUZZLE"; gameState = "PLAYING"; resetRun();
+  BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
   initPuzzle(id); updateHud(); BB.UI.show(null);
   var pz = BB.Content.PUZZLES[id - 1];
   BB.UI.announce("🧩 PUZZLE " + id + ": " + pz.name.toUpperCase(), pz.desc, "#00f5d4");
