@@ -44,30 +44,23 @@
 })();
 
 /* ---------------------------------------------------------------------------
-   V2 ENHANCEMENT: UI skin layer.
-   Loads css/enhance.css (SVG textures, glass cards, 3D buttons) on top of the
-   original stylesheet and upgrades the bottom-nav markup so each button has a
-   separate icon + label element that the skin can style.
-   Purely additive: no existing engine/UI code is modified.
+   V2 ENHANCEMENT: bottom-nav markup.
+   Splits each nav button into a separate icon + label element so css/app.css
+   can style them.
+
+   The old runtime <link> injection for css/enhance.css lived here and is
+   gone: all styling is in css/app.css now, and because that retired sheet
+   was injected AFTER app.css, any stale cached copy of it dragged the old
+   dark neon theme back onto the cards.
 --------------------------------------------------------------------------- */
 (function () {
-  // 1. Stylesheet — injected as early as possible to avoid a flash of old UI.
-  (function injectSkin() {
-    if (document.querySelector("link[data-bb-skin]")) return;
-    var l = document.createElement("link");
-    l.rel = "stylesheet";
-    l.href = "css/enhance.css";
-    l.setAttribute("data-bb-skin", "1");
-    (document.head || document.documentElement).appendChild(l);
-  })();
-
   function ready(fn) {
     if (document.readyState === "loading")
       document.addEventListener("DOMContentLoaded", fn);
     else fn();
   }
 
-  // 2. Bottom nav: "🏠<br>HOME" -> <span class=nav-ico>🏠</span><span class=nav-lbl>HOME</span>
+  // "🏠<br>HOME" -> <span class=nav-ico>🏠</span><span class=nav-lbl>HOME</span>
   function upgradeNav() {
     var nav = document.getElementById("bottomNav");
     if (!nav) return;
@@ -150,76 +143,59 @@
     };
   }
 
+  /* Structure only. Every colour, border and shadow comes from css/app.css,
+     so the profile card and the editor sheet match the rest of the UI
+     instead of fighting it with a second, darker theme. */
   function injectStyle() {
     if (document.getElementById(STYLE_ID)) return;
     var s = document.createElement("style");
     s.id = STYLE_ID;
     s.textContent = [
       ".bbp-hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:13px;",
-        "padding:15px;margin-bottom:12px;border-radius:20px;",
-        "border:1px solid rgba(255,255,255,.14);",
-        "background:linear-gradient(180deg,rgba(46,56,110,.9),rgba(13,17,40,.94));",
-        "box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 14px 32px rgba(0,0,0,.45)}",
-      ".bbp-hero::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;",
-        "background:radial-gradient(70% 60% at 96% 0%,rgba(255,211,92,.35),transparent 70%)}",
+        "width:100%;padding:15px;margin:0 0 12px;border-radius:20px}",
+      ".bbp-hero::after{content:'';position:absolute;inset:0;pointer-events:none}",
       ".bbp-hero>*{position:relative;z-index:1}",
       ".bbp-av{width:64px;height:64px;flex:0 0 64px;display:grid;place-items:center;font-size:34px;",
-        "border-radius:20px;background:radial-gradient(circle at 32% 26%,#7c93ff,#26307f 72%);",
-        "box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 8px 18px rgba(0,0,0,.45)}",
+        "border-radius:20px}",
       ".bbp-info{flex:1;min-width:0}",
       ".bbp-nrow{display:flex;align-items:center;gap:7px}",
       ".bbp-name{font-size:17px;font-weight:900;letter-spacing:.04em;overflow:hidden;",
         "text-overflow:ellipsis;white-space:nowrap}",
-      ".bbp-rank{padding:3px 9px;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:.1em;",
-        "color:#2a1c00;background:linear-gradient(180deg,#ffe088,#ffb52c)}",
-      ".bbp-xprow{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;",
-        "letter-spacing:.08em;color:#9aa7cc;margin:9px 0 4px}",
-      ".bbp-track{height:8px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.1);",
-        "box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}",
-      ".bbp-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#3fe0d0,#8b7bff);",
-        "box-shadow:0 0 12px rgba(139,123,255,.55)}",
-      ".bbp-edit{margin-top:10px;padding:8px 12px;font-size:10px;font-weight:900;letter-spacing:.08em;",
-        "color:#eef2ff;border:1px solid rgba(255,255,255,.22);border-radius:999px;",
-        "background:rgba(255,255,255,.08)}",
+      ".bbp-rank{padding:3px 9px;border-radius:999px;font-size:9px;font-weight:900;",
+        "letter-spacing:.1em;white-space:nowrap}",
+      ".bbp-xprow{display:flex;justify-content:space-between;gap:8px;font-size:9.5px;",
+        "font-weight:800;letter-spacing:.08em;margin:9px 0 4px}",
+      ".bbp-track{height:8px;border-radius:999px;overflow:hidden}",
+      ".bbp-fill{height:100%;border-radius:999px}",
+      ".bbp-edit{margin-top:10px;padding:8px 12px;font-size:10px;font-weight:900;",
+        "letter-spacing:.08em;border-radius:999px;cursor:pointer}",
       ".bbp-edit:active{transform:translateY(1px)}",
-      ".bbp-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;",
-        "padding:18px;background:rgba(4,6,16,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}",
+      /* the overlay scrolls, not the sheet: a tall sheet stays reachable
+         end to end on short screens, SAVE row included */
+      ".bbp-modal{position:fixed;inset:0;z-index:200;display:none;align-items:flex-start;",
+        "justify-content:center;overflow-x:hidden;overflow-y:auto;",
+        "-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;",
+        "padding:18px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}",
       ".bbp-modal.on{display:flex}",
-      ".bbp-sheet{width:100%;max-width:360px;max-height:86vh;overflow:auto;padding:17px;border-radius:22px;",
-        "border:1px solid rgba(255,255,255,.16);",
-        "background:linear-gradient(180deg,rgba(34,42,86,.98),rgba(11,15,34,.99));",
-        "box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 26px 60px rgba(0,0,0,.65)}",
+      ".bbp-sheet{width:100%;max-width:360px;margin:auto 0;padding:17px;border-radius:22px;",
+        "touch-action:pan-y}",
       ".bbp-h{font-size:13px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;",
-        "color:#eef2ff;margin-bottom:12px;text-align:center}",
+        "margin-bottom:12px;text-align:center}",
       ".bbp-lab{font-size:9.5px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;",
-        "color:#9aa7cc;margin:12px 0 7px}",
+        "margin:12px 0 7px}",
       ".bbp-input{width:100%;min-height:46px;padding:11px 13px;font-size:15px;font-weight:800;",
-        "color:#eef2ff;border:1px solid rgba(255,255,255,.2);border-radius:14px;",
-        "background:rgba(6,9,24,.7);outline:none;box-sizing:border-box}",
-      ".bbp-input:focus{border-color:rgba(63,224,208,.6);box-shadow:0 0 0 3px rgba(63,224,208,.15)}",
+        "border-radius:14px;outline:none;box-sizing:border-box}",
       ".bbp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}",
       ".bbp-opt{aspect-ratio:1/1;display:grid;place-items:center;font-size:24px;cursor:pointer;",
-        "border:1px solid rgba(255,255,255,.14);border-radius:15px;",
-        "background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.03));",
-        "box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}",
-      ".bbp-opt.sel{border-color:rgba(255,211,92,.85);",
-        "background:linear-gradient(180deg,rgba(255,211,92,.3),rgba(255,150,40,.12));",
-        "box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 0 2px rgba(255,211,92,.28)}",
+        "border-radius:15px}",
       ".bbp-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}",
-      ".bbp-stat{padding:11px 10px;text-align:center;border-radius:14px;",
-        "border:1px solid rgba(255,255,255,.1);background:rgba(6,9,24,.6)}",
-      ".bbp-sv{font-size:17px;font-weight:900;color:#eef2ff}",
-      ".bbp-sv.gold{color:#ffd35c}",
+      ".bbp-stat{padding:11px 10px;text-align:center;border-radius:14px}",
+      ".bbp-sv{font-size:17px;font-weight:900}",
       ".bbp-sl{margin-top:3px;font-size:9px;font-weight:800;letter-spacing:.1em;",
-        "text-transform:uppercase;color:#9aa7cc}",
+        "text-transform:uppercase}",
       ".bbp-row{display:flex;gap:9px;margin-top:16px}",
       ".bbp-btn{flex:1;min-height:46px;font-size:12px;font-weight:900;letter-spacing:.08em;",
-        "color:#eef2ff;border:1px solid rgba(255,255,255,.2);border-radius:15px;",
-        "background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));",
-        "box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}",
-      ".bbp-btn.go{color:#331b00;border-color:rgba(255,255,255,.3);",
-        "background:linear-gradient(180deg,#ffe088,#ffb52c);",
-        "box-shadow:0 4px 0 #c47100,inset 0 1px 0 rgba(255,255,255,.6)}",
+        "border-radius:15px;cursor:pointer}",
       ".bbp-btn:active{transform:translateY(2px)}"
     ].join("");
     document.head.appendChild(s);
@@ -252,12 +228,16 @@
   function mountHero() {
     var screen = document.getElementById("dashboardScreen");
     if (!screen) return;
+    /* The hero belongs INSIDE the card. A screen is a column flex scroller,
+       but it used to be a row: mounting the hero as a sibling of the card
+       put the two boxes side by side, each squeezed to half the width. */
+    var host = screen.querySelector(".mobile-card") || screen;
     var hero = screen.querySelector(".bbp-hero");
     if (!hero) {
       hero = document.createElement("div");
       hero.className = "bbp-hero";
-      screen.insertBefore(hero, screen.firstChild);
     }
+    if (hero.parentNode !== host) host.insertBefore(hero, host.firstChild);
     hero.innerHTML = heroMarkup();
     // name is set as text (never HTML) so odd characters can't break the page
     var nameEl = hero.querySelector(".bbp-name");
@@ -340,6 +320,8 @@
     fillGrid();
     fillStats();
     modal.classList.add("on");
+    // always open at the top, even if the sheet was left scrolled down
+    modal.scrollTop = 0;
   }
 
   function close() { if (modal) modal.classList.remove("on"); }
