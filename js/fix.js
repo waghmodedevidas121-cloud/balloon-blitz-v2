@@ -19,15 +19,13 @@
  *     abort main.js's single boot try-block BEFORE BB.Engine.init(), which
  *     left the game completely dead. Those calls are shielded now, so the
  *     engine always boots.
- *  7. The render loop had no state gate. BB.Engine.init() ended with
- *     initBalloons() -- 14 to 22 balloons -- and then started the rAF loop,
- *     which only uses gameState for a PAUSED freeze and the round timer.
- *     Balloon update/draw, respawn, particles and drops therefore ran from
- *     the very first frame, so the entire Blitz field floated up behind the
- *     home screen and MobileBalloon.update() sent every balloon that left the
- *     top back to the bottom through reset(null): endless spawning in the
- *     menus. The field is now emptied whenever no round is live and
- *     initBalloons() is neutralised outside a round.
+ *  7. The render loop simulated the playfield on the menus: BB.Engine.init()
+ *     ended with initBalloons() and the rAF loop only read gameState for a
+ *     PAUSED freeze and the round timer, so the whole Blitz field floated up
+ *     behind the home screen while reset(null) sent every escaped balloon
+ *     back to the bottom. That one is fixed at the source -- js/engine2.js
+ *     now gates loop() on a live round and init() no longer builds the field
+ *     -- so nothing here has to police the entity lists.
  */
 (function () {
   var BB = (window.BB = window.BB || {});
@@ -143,65 +141,6 @@
     return typeof window.gameState === "string" ? window.gameState : "HOME";
   }
 
-  /* ------------- 7. the playfield only exists while a round is live */
-
-  /* Every entity list the loop walks. They are top-level `var`s in
-     js/engine.js, so in a classic script they are global properties and can
-     be emptied from here without touching the engine files. */
-  var FIELDS = [
-    "balloons", "particles", "textPopups", "shockwaves",
-    "needleRays", "powerupDrops", "slingshotDarts"
-  ];
-
-  /* PAUSED keeps the board for the resume, and the two end states keep it
-     behind the results card, where chain pops are still resolving. */
-  var ROUND_STATES = { PLAYING: 1, PAUSED: 1, LEVEL_COMPLETE: 1, GAMEOVER: 1 };
-
-  function inRound() { return !!ROUND_STATES[engineState()]; }
-
-  function clearField() {
-    for (var i = 0; i < FIELDS.length; i++) {
-      var a = window[FIELDS[i]];
-      if (a && typeof a.length === "number" && a.length) a.length = 0;
-    }
-    try { window.bossBalloon = null; } catch (e) {}
-  }
-
-  function idleField() { if (!inRound()) clearField(); }
-
-  /* The loop keeps running -- it is cheap with nothing to draw -- but the
-     boot-time fill never becomes visible, because the engine resolves
-     initBalloons() through the global scope and so calls this wrapper. */
-  function hookSpawner() {
-    var f = window.initBalloons;
-    if (typeof f !== "function" || f.__bbIdle) return;
-    function g() {
-      var r = f.apply(this, arguments);
-      if (!inRound()) clearField();
-      return r;
-    }
-    g.__bbIdle = true;
-    window.initBalloons = g;
-  }
-
-  /* Opening any menu sweeps the field. show(null) means "enter gameplay",
-     so it is left alone. The extra deferred sweep covers the handlers that
-     show the screen before they set gameState. */
-  function hookShow() {
-    if (!BB.UI || typeof BB.UI.show !== "function" || BB.UI.show.__bbIdle) return;
-    var f = BB.UI.show;
-    function g(screen) {
-      var r = f.apply(BB.UI, arguments);
-      if (screen) {
-        idleField();
-        setTimeout(idleField, 0);
-      }
-      return r;
-    }
-    g.__bbIdle = true;
-    BB.UI.show = g;
-  }
-
   function tick() {
     var live = engineState() === "PLAYING";
     if (live !== playing) {
@@ -210,7 +149,6 @@
       if (live) BB.Sky.pause(); else BB.Sky.resume();
     }
     if (live) syncRealm();
-    else idleField();
   }
 
   function hookStarts() {
@@ -236,9 +174,6 @@
     tidyDecor();
     watchDecor();
     hookStarts();
-    hookSpawner();
-    hookShow();
-    idleField();
     tick();
   }
 
@@ -254,7 +189,6 @@
   BB.Fix = {
     pass: pass,
     tidyDecor: tidyDecor,
-    syncRealm: syncRealm,
-    clearField: clearField
+    syncRealm: syncRealm
   };
 })();
