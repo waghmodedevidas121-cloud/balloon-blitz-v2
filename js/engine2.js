@@ -711,8 +711,39 @@ function fireAt(px, py) {
   }
   if (!hit && combo > 1) { combo = 1; updateHud(); }
 }
+
+/* ------------------------------------------------------------ ROUND GATE
+   The loop runs for the whole session, so it has to know when there is
+   nothing to simulate. PLAYING and PAUSED are obvious; LEVEL_COMPLETE and
+   GAMEOVER keep the board alive behind the results card while the last chain
+   pops resolve. Everything else (HOME, or any state a menu introduces) is
+   idle: the field is dropped once and the loop coasts. */
+function inRound() {
+  return gameState === "PLAYING" || gameState === "PAUSED" ||
+    gameState === "LEVEL_COMPLETE" || gameState === "GAMEOVER";
+}
+function fieldIsEmpty() {
+  return !balloons.length && !particles.length && !textPopups.length &&
+    !shockwaves.length && !needleRays.length && !powerupDrops.length &&
+    !lasers.length && !slingshotDarts.length && !bossBalloon;
+}
+function clearField() {
+  balloons.length = 0; particles.length = 0; textPopups.length = 0;
+  shockwaves.length = 0; needleRays.length = 0; powerupDrops.length = 0;
+  lasers.length = 0; slingshotDarts.length = 0;
+  bossBalloon = null;
+  shakeDuration = 0; shakeIntensity = 0; slowMoTimer = 0;
+  if (isFever || feverCharge) endFever();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+}
 function loop(curT) {
   var dt = Math.min((curT - lastT) / 1000, 0.1); lastT = curT;
+  if (!inRound()) {
+    if (!fieldIsEmpty()) clearField();
+    requestAnimationFrame(loop);
+    return;
+  }
   if (isFever) {
     feverTimer -= dt;
     document.getElementById("mFeverPct").innerText = Math.ceil(Math.max(0, feverTimer)) + "s";
@@ -863,7 +894,8 @@ BB.Engine = {
     });
     document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
     document.addEventListener("dblclick", function (e) { e.preventDefault(); }, { passive: false });
-    initBalloons();
+    /* No initBalloons() here. The field belongs to the start* functions;
+       building it at boot is what left balloons floating on the menus. */
     requestAnimationFrame(loop);
   },
   dims: function () { return { w: width, h: height }; },
