@@ -1,4 +1,4 @@
-/* BB.Content — content-driven catalog with 500 Progressive Levels & 20 Worlds. */
+/* BB.Content — content-driven catalog with 600 Progressive Levels, 24 Worlds & 25 Tactical Puzzles. */
 window.BB = window.BB || {};
 
 (function () {
@@ -22,85 +22,192 @@ window.BB = window.BB || {};
     { id: 17, name: "Dragon's Lair",      icon: "🐉", start: 401, end: 425 },
     { id: 18, name: "Vortex Nebula",      icon: "🌀", start: 426, end: 450 },
     { id: 19, name: "Galactic Gates",     icon: "🚀", start: 451, end: 475 },
-    { id: 20, name: "Cosmic Apex",        icon: "👑", start: 476, end: 500 }
+    { id: 20, name: "Cosmic Apex",        icon: "👑", start: 476, end: 500 },
+    { id: 21, name: "Celestial Haven",    icon: "🌌", start: 501, end: 525 },
+    { id: 22, name: "Chrono Spire",       icon: "⏳", start: 526, end: 550 },
+    { id: 23, name: "Solar Eclipse",      icon: "🌑", start: 551, end: 575 },
+    { id: 24, name: "Eternal Infinity",   icon: "♾️", start: 576, end: 600 }
   ];
 
-  function generate500Levels() {
+  function generate600Levels() {
     var arr = [];
-    var types = ["pop", "gold", "bomb", "freeze", "combo", "score", "shield", "pop"];
-    var tutorial = [
-      { target: 18, time: 40, desc: "Pop 18 balloons", type: "pop" },
-      { target: 30, time: 35, desc: "Pop 30 balloons", type: "pop" },
-      { target: 4,  time: 30, desc: "Pop 4 Golden balloons", type: "gold" },
-      { target: 3,  time: 30, desc: "Detonate 3 Bombs", type: "bomb" },
-      { target: 4,  time: 30, desc: "Pop 4 Slow-Mo balloons", type: "freeze" },
-      { target: 12, time: 30, desc: "Reach 12x Combo", type: "combo" },
-      { target: 45, time: 35, desc: "Pop 45 Fast balloons", type: "pop" },
-      { target: 5,  time: 35, desc: "Detonate 5 Bombs", type: "bomb" },
-      { target: 2,  time: 40, desc: "Trigger 2 Fevers", type: "fever" }
+    var worldThemes = [
+      { id: 1,  name: "Sunny Valley",      focus: "moves_color", hasHazards: false, hasShields: false, hasWind: false },
+      { id: 2,  name: "Rainbow Meadow",     focus: "sequence_hazard", hasHazards: true, hasShields: false, hasWind: false },
+      { id: 3,  name: "Neon Carnival",      focus: "shield_bomb", hasHazards: false, hasShields: true, hasWind: false },
+      { id: 4,  name: "Thunder Grove",      focus: "wind_escort", hasHazards: true, hasShields: false, hasWind: true },
+      { id: 5,  name: "Candy Kingdom",      focus: "color_shield", hasHazards: false, hasShields: true, hasWind: false },
+      { id: 6,  name: "Frost Glacier",      focus: "freeze_drift", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 7,  name: "Molten Volcano",     focus: "bomb_hazard", hasHazards: true, hasShields: false, hasWind: true },
+      { id: 8,  name: "Mystic Jungle",      focus: "sequence_escort", hasHazards: true, hasShields: true, hasWind: false },
+      { id: 9,  name: "Crystal Cavern",     focus: "gold_shield", hasHazards: true, hasShields: true, hasWind: false },
+      { id: 10, name: "Sky Citadel",        focus: "wind_shield_boss", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 11, name: "Starry Twilight",    focus: "sequence_color", hasHazards: true, hasShields: true, hasWind: false },
+      { id: 12, name: "Deep Coral",         focus: "drift_escort", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 13, name: "Cyber Metropolis",   focus: "shield_bomb", hasHazards: true, hasShields: true, hasWind: false },
+      { id: 14, name: "Solar Flares",       focus: "bomb_hazard", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 15, name: "Phantom Castle",     focus: "sequence_hazard", hasHazards: true, hasShields: true, hasWind: false },
+      { id: 16, name: "Diamond Peaks",      focus: "shield_escort", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 17, name: "Dragon's Lair",      focus: "boss_hazard", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 18, name: "Vortex Nebula",      focus: "wind_sequence", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 19, name: "Galactic Gates",     focus: "shield_color", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 20, name: "Cosmic Apex",        focus: "apex_trials", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 21, name: "Celestial Haven",    focus: "apex_trials", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 22, name: "Chrono Spire",       focus: "apex_trials", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 23, name: "Solar Eclipse",      focus: "apex_trials", hasHazards: true, hasShields: true, hasWind: true },
+      { id: 24, name: "Eternal Infinity",   focus: "infinity_master", hasHazards: true, hasShields: true, hasWind: true }
     ];
 
-    for (var i = 1; i <= 500; i++) {
-      var isBoss = (i % 10 === 0);
+    var colorList = ["BLUE", "RED", "GREEN", "PINK", "GOLD"];
+    var colorEmojis = { BLUE: "🔵", RED: "🔴", GREEN: "🍏", PINK: "🌸", GOLD: "⭐" };
+    var colorNames = { BLUE: "Blue", RED: "Red", GREEN: "Green", PINK: "Pink", GOLD: "Gold" };
+
+    for (var i = 1; i <= 600; i++) {
       var worldIdx = Math.floor((i - 1) / 25);
-      var speedScale = 1.0 + Math.min(1.8, (i - 1) * 0.0035);
-      var hasShields = (i >= 30);
-      var hasHazards = (i >= 50);
+      var wInfo = worldThemes[worldIdx] || worldThemes[worldThemes.length - 1];
+      var stageInWorld = ((i - 1) % 25) + 1;
+      var speedScale = 1.0 + Math.min(0.18, (i - 1) * 0.0003);
+
+      var isBoss = (stageInWorld === 25 || stageInWorld === 10 || stageInWorld === 20);
+      var isMidBoss = (stageInWorld === 5 || stageInWorld === 15);
 
       if (isBoss) {
-        var bossHp = 15 + Math.floor(i * 0.28);
+        var bossHp = Math.min(55, 14 + Math.floor(i * 0.07) + (stageInWorld === 25 ? 6 : 0));
+        var bossMoves = Math.max(16, Math.floor(bossHp * 1.35) + 5);
+        var bossName = stageInWorld === 25 ? (wInfo.name + " Monarch") : (stageInWorld === 20 ? "Dread Blimp" : "Sky Vanguard");
         arr.push({
           id: i,
+          world: worldIdx + 1,
+          worldName: wInfo.name,
+          stageInWorld: stageInWorld,
           isBoss: true,
           target: bossHp,
-          time: Math.max(30, 45 - Math.floor(i * 0.02)),
-          desc: "Defeat King Blimp (" + bossHp + " HP)",
+          moves: bossMoves,
+          time: 45,
+          desc: "Defeat " + bossName + " (" + bossHp + " HP)",
           type: "boss",
           speedMult: speedScale,
-          hasShields: hasShields,
-          hasHazards: hasHazards,
-          world: worldIdx + 1
+          hasShields: wInfo.hasShields || (i > 50),
+          hasHazards: wInfo.hasHazards || (i > 30),
+          hasWind: wInfo.hasWind,
+          windSpeed: wInfo.hasWind ? (i % 2 === 0 ? 30 : -30) : 0
         });
-      } else if (i <= 9) {
-        var tut = tutorial[i - 1];
-        arr.push(Object.assign({ id: i, speedMult: 1.0, world: 1 }, tut));
+      } else if (isMidBoss) {
+        var miniHp = Math.min(28, 8 + Math.floor(i * 0.04));
+        var miniMoves = Math.max(12, Math.floor(miniHp * 1.35) + 3);
+        arr.push({
+          id: i,
+          world: worldIdx + 1,
+          worldName: wInfo.name,
+          stageInWorld: stageInWorld,
+          isMidBoss: true,
+          target: miniHp,
+          moves: miniMoves,
+          time: 40,
+          desc: "Defeat Mini Blimp (" + miniHp + " HP)",
+          type: "midboss",
+          speedMult: speedScale * 1.08,
+          hasShields: wInfo.hasShields,
+          hasHazards: wInfo.hasHazards,
+          hasWind: wInfo.hasWind,
+          windSpeed: wInfo.hasWind ? 24 : 0
+        });
       } else {
-        var t = types[(i * 3 + 5) % types.length];
-        var targetVal = 20, descStr = "", timeLimit = Math.max(28, 42 - Math.floor(i * 0.025));
+        var stgType = "pop";
+        var tgt = 15;
+        var moves = 16;
+        var descStr = "";
+        var targetCol = null;
+        var seq = null;
+        var isEscort = false;
+        var hasHazards = wInfo.hasHazards;
+        var hasShields = wInfo.hasShields;
+        var hasWind = wInfo.hasWind;
 
-        if (t === "pop") {
-          targetVal = 25 + Math.min(80, Math.floor(i * 0.18));
-          descStr = "Pop " + targetVal + " balloons";
-        } else if (t === "gold") {
-          targetVal = 4 + Math.min(12, Math.floor(i * 0.03));
-          descStr = "Collect " + targetVal + " Gold balloons";
-        } else if (t === "bomb") {
-          targetVal = 4 + Math.min(10, Math.floor(i * 0.025));
-          descStr = "Detonate " + targetVal + " Bombs";
-        } else if (t === "freeze") {
-          targetVal = 4 + Math.min(10, Math.floor(i * 0.025));
-          descStr = "Pop " + targetVal + " Slow-Mo balloons";
-        } else if (t === "combo") {
-          targetVal = Math.min(25, 10 + Math.floor(i * 0.04));
-          descStr = "Reach " + targetVal + "x Combo";
-        } else if (t === "score") {
-          targetVal = 1500 + i * 25;
-          descStr = "Score " + targetVal.toLocaleString() + " pts";
-        } else if (t === "shield") {
-          targetVal = 5 + Math.min(15, Math.floor(i * 0.04));
-          descStr = "Shatter " + targetVal + " Shields 🛡️";
+        // Tutorial Stages (World 1: 1-4)
+        if (i === 1) {
+          stgType = "pop"; tgt = 12; moves = 15;
+          descStr = "Pop 12 balloons with smart moves!";
+        } else if (i === 2) {
+          stgType = "color"; targetCol = "BLUE"; tgt = 6; moves = 12;
+          descStr = "Harvest 6 Blue 🔵 balloons";
+        } else if (i === 3) {
+          stgType = "color"; targetCol = "RED"; tgt = 6; moves = 12;
+          descStr = "Harvest 6 Red 🔴 balloons";
+        } else if (i === 4) {
+          stgType = "gold"; tgt = 3; moves = 10;
+          descStr = "Collect 3 Gold ⭐ balloons";
+        } else {
+          var pattern = stageInWorld % 7;
+          if (wInfo.focus.indexOf("escort") !== -1 && (stageInWorld === 8 || stageInWorld === 18 || stageInWorld === 23)) {
+            stgType = "escort";
+            isEscort = true;
+            tgt = 1;
+            moves = 24;
+            hasHazards = true;
+            descStr = "Escort Traveler 🎈 safely to the clouds! (3 ❤️)";
+          } else if (wInfo.focus.indexOf("sequence") !== -1 && (stageInWorld === 3 || stageInWorld === 9 || stageInWorld === 17)) {
+            stgType = "sequence";
+            seq = (i % 2 === 0) ? ["RED", "BLUE", "GREEN"] : ["BLUE", "GOLD", "RED"];
+            tgt = seq.length * (stageInWorld > 12 ? 2 : 1);
+            moves = 12 + Math.floor(stageInWorld * 0.4);
+            var seqDesc = seq.map(function (k) { return colorEmojis[k]; }).join(" ➔ ");
+            descStr = "Sequence: " + seqDesc;
+          } else if (pattern === 1 || pattern === 4) {
+            stgType = "color";
+            targetCol = colorList[(i + stageInWorld) % colorList.length];
+            tgt = Math.min(18, 5 + Math.floor(stageInWorld * 0.45));
+            moves = tgt + Math.max(5, 10 - Math.floor(i * 0.012));
+            descStr = "Harvest " + tgt + " " + colorNames[targetCol] + " " + colorEmojis[targetCol] + " balloons";
+          } else if (pattern === 2 && (hasShields || i >= 26)) {
+            stgType = "shield";
+            hasShields = true;
+            tgt = Math.min(16, 4 + Math.floor(stageInWorld * 0.4));
+            moves = tgt + 6;
+            descStr = "Shatter " + tgt + " Armored Shields 🛡️";
+          } else if (pattern === 3) {
+            stgType = "bomb";
+            tgt = Math.min(10, 3 + Math.floor(stageInWorld * 0.25));
+            moves = tgt + 5;
+            descStr = "Detonate " + tgt + " Bomb chains 💥";
+          } else if (pattern === 5) {
+            if (stageInWorld % 2 === 0) {
+              stgType = "gold";
+              tgt = Math.min(8, 3 + Math.floor(stageInWorld * 0.2));
+              moves = tgt + 6;
+              descStr = "Collect " + tgt + " Gold ⭐ balloons";
+            } else {
+              stgType = "freeze";
+              tgt = Math.min(8, 3 + Math.floor(stageInWorld * 0.2));
+              moves = tgt + 5;
+              descStr = "Pop " + tgt + " Slow-Mo ❄️ balloons";
+            }
+          } else {
+            stgType = "pop";
+            tgt = Math.min(28, 10 + Math.floor(stageInWorld * 0.7));
+            moves = Math.max(tgt + 5, Math.ceil(tgt * 1.25));
+            descStr = "Pop " + tgt + " balloons in " + moves + " moves";
+          }
         }
 
         arr.push({
           id: i,
-          target: targetVal,
-          time: timeLimit,
+          world: worldIdx + 1,
+          worldName: wInfo.name,
+          stageInWorld: stageInWorld,
+          target: tgt,
+          moves: moves,
+          time: 40,
           desc: descStr,
-          type: t,
+          type: stgType,
+          targetColor: targetCol,
+          sequence: seq,
+          isEscort: isEscort,
           speedMult: speedScale,
           hasShields: hasShields,
           hasHazards: hasHazards,
-          world: worldIdx + 1
+          hasWind: hasWind,
+          windSpeed: hasWind ? (i % 2 === 0 ? 30 : -30) : 0
         });
       }
     }
@@ -109,8 +216,8 @@ window.BB = window.BB || {};
 
   window.BB.Content = {
     WORLDS: WORLDS,
-    LEVELS: generate500Levels(),
-    MAX_LEVELS: 500,
+    LEVELS: generate600Levels(),
+    MAX_LEVELS: 600,
   PUZZLES: [
     {
       id: 1,
@@ -237,7 +344,8 @@ window.BB = window.BB || {};
     },
     {
       id: 10,
-      name: "Grand Arrow Master",
+      name: "Grand Arrow Mid-Boss",
+      isMidBoss: true,
       desc: "3 Darts: 12 directional balloons! The ultimate puzzle!",
       darts: 3,
       balloons: [
@@ -254,6 +362,2061 @@ window.BB = window.BB || {};
         { key: "PINK",  x: 0.62, y: 0.35, dir: "LEFT" },
         { key: "PINK",  x: 0.50, y: 0.53, dir: "UP" }
       ]
+    },
+    {
+      id: 11,
+      name: "The Pinwheel",
+      desc: "1 Dart: Start the clockwise whirl into the central TNT core!",
+      darts: 1,
+      balloons: [
+        { key: "RED",   x: 0.20, y: 0.25, dir: "RIGHT" },
+        { key: "BLUE",  x: 0.50, y: 0.25, dir: "DOWN" },
+        { key: "BOMB",  x: 0.50, y: 0.45, dir: "ALL" },
+        { key: "GREEN", x: 0.50, y: 0.65, dir: "LEFT" },
+        { key: "PINK",  x: 0.20, y: 0.65, dir: "UP" },
+        { key: "GOLD",  x: 0.20, y: 0.45, dir: "RIGHT" },
+        { key: "GOLD",  x: 0.80, y: 0.45, dir: "UP" },
+        { key: "PINK",  x: 0.80, y: 0.25, dir: "LEFT" }
+      ]
+    },
+    {
+      id: 12,
+      name: "The Forking Diamond",
+      desc: "1 Dart: Dual symmetric beam split into the apex bomb!",
+      darts: 1,
+      balloons: [
+        { key: "RED",   x: 0.50, y: 0.65, dir: "UP" },
+        { key: "GOLD",  x: 0.50, y: 0.45, dir: "HORIZ" },
+        { key: "BLUE",  x: 0.25, y: 0.45, dir: "UP" },
+        { key: "BLUE",  x: 0.75, y: 0.45, dir: "UP" },
+        { key: "GREEN", x: 0.25, y: 0.25, dir: "RIGHT" },
+        { key: "GREEN", x: 0.75, y: 0.25, dir: "LEFT" },
+        { key: "BOMB",  x: 0.50, y: 0.25, dir: "ALL" },
+        { key: "PINK",  x: 0.50, y: 0.12, dir: "DOWN" }
+      ]
+    },
+    {
+      id: 13,
+      name: "Crossroads of Chaos",
+      desc: "2 Darts: Solve both interlocking directional circuits!",
+      darts: 2,
+      balloons: [
+        { key: "RED",   x: 0.25, y: 0.25, dir: "DOWN" },
+        { key: "BLUE",  x: 0.25, y: 0.50, dir: "RIGHT" },
+        { key: "GREEN", x: 0.50, y: 0.50, dir: "DOWN" },
+        { key: "PINK",  x: 0.50, y: 0.70, dir: "LEFT" },
+        { key: "GOLD",  x: 0.25, y: 0.70, dir: "UP" },
+        { key: "RED",   x: 0.75, y: 0.70, dir: "UP" },
+        { key: "BLUE",  x: 0.75, y: 0.45, dir: "LEFT" },
+        { key: "BOMB",  x: 0.50, y: 0.45, dir: "UP" },
+        { key: "GOLD",  x: 0.50, y: 0.25, dir: "RIGHT" },
+        { key: "PINK",  x: 0.75, y: 0.25, dir: "DOWN" }
+      ]
+    },
+    {
+      id: 14,
+      name: "Triple Beam Ricochet",
+      desc: "2 Darts: Trigger the horizontal beamers and vertical pillars!",
+      darts: 2,
+      balloons: [
+        { key: "GOLD",  x: 0.50, y: 0.45, dir: "HORIZ" },
+        { key: "RED",   x: 0.20, y: 0.45, dir: "UP" },
+        { key: "RED",   x: 0.80, y: 0.45, dir: "UP" },
+        { key: "PINK",  x: 0.20, y: 0.25, dir: "RIGHT" },
+        { key: "PINK",  x: 0.80, y: 0.25, dir: "LEFT" },
+        { key: "BOMB",  x: 0.50, y: 0.25, dir: "ALL" },
+        { key: "BLUE",  x: 0.20, y: 0.68, dir: "RIGHT" },
+        { key: "GREEN", x: 0.50, y: 0.68, dir: "VERT" },
+        { key: "GOLD",  x: 0.50, y: 0.56, dir: "UP" },
+        { key: "PINK",  x: 0.50, y: 0.78, dir: "DOWN" },
+        { key: "BLUE",  x: 0.80, y: 0.68, dir: "UP" },
+        { key: "GOLD",  x: 0.80, y: 0.56, dir: "LEFT" }
+      ]
+    },
+    {
+      id: 15,
+      name: "The Binary Tree",
+      desc: "1 Dart: Trace from the trunk to shatter the entire crown!",
+      darts: 1,
+      balloons: [
+        { key: "RED",   x: 0.50, y: 0.72, dir: "UP" },
+        { key: "GOLD",  x: 0.50, y: 0.52, dir: "HORIZ" },
+        { key: "BLUE",  x: 0.26, y: 0.52, dir: "UP" },
+        { key: "GREEN", x: 0.26, y: 0.34, dir: "RIGHT" },
+        { key: "BLUE",  x: 0.74, y: 0.52, dir: "UP" },
+        { key: "GREEN", x: 0.74, y: 0.34, dir: "LEFT" },
+        { key: "BOMB",  x: 0.50, y: 0.34, dir: "ALL" },
+        { key: "GOLD",  x: 0.50, y: 0.18, dir: "HORIZ" },
+        { key: "PINK",  x: 0.26, y: 0.18, dir: "DOWN" },
+        { key: "PINK",  x: 0.74, y: 0.18, dir: "DOWN" }
+      ]
+    },
+    {
+      id: 16,
+      name: "Sub-Zero Perimeter",
+      desc: "2 Darts: Freeze wave split unlocking twin explosive wings!",
+      darts: 2,
+      balloons: [
+        { key: "FREEZE", x: 0.25, y: 0.30, dir: "HORIZ" },
+        { key: "RED",    x: 0.12, y: 0.30, dir: "DOWN" },
+        { key: "PINK",   x: 0.12, y: 0.60, dir: "RIGHT" },
+        { key: "BLUE",   x: 0.38, y: 0.60, dir: "UP" },
+        { key: "GREEN",  x: 0.38, y: 0.30, dir: "LEFT" },
+        { key: "FREEZE", x: 0.75, y: 0.30, dir: "HORIZ" },
+        { key: "RED",    x: 0.62, y: 0.30, dir: "DOWN" },
+        { key: "BLUE",   x: 0.62, y: 0.60, dir: "RIGHT" },
+        { key: "PINK",   x: 0.88, y: 0.60, dir: "UP" },
+        { key: "BOMB",   x: 0.88, y: 0.30, dir: "ALL" },
+        { key: "GOLD",   x: 0.88, y: 0.16, dir: "DOWN" }
+      ]
+    },
+    {
+      id: 17,
+      name: "The Hourglass",
+      desc: "1 Dart: Pass through the tight neck to detonate the base!",
+      darts: 1,
+      balloons: [
+        { key: "RED",   x: 0.25, y: 0.22, dir: "RIGHT" },
+        { key: "BLUE",  x: 0.75, y: 0.22, dir: "DOWN" },
+        { key: "PINK",  x: 0.75, y: 0.38, dir: "LEFT" },
+        { key: "BOMB",  x: 0.50, y: 0.38, dir: "DOWN" },
+        { key: "GOLD",  x: 0.50, y: 0.54, dir: "HORIZ" },
+        { key: "GREEN", x: 0.25, y: 0.54, dir: "DOWN" },
+        { key: "GREEN", x: 0.75, y: 0.54, dir: "DOWN" },
+        { key: "BLUE",  x: 0.25, y: 0.70, dir: "RIGHT" },
+        { key: "PINK",  x: 0.75, y: 0.70, dir: "LEFT" },
+        { key: "GOLD",  x: 0.50, y: 0.70, dir: "UP" }
+      ]
+    },
+    {
+      id: 18,
+      name: "Orbit Core Mid-Boss",
+      isMidBoss: true,
+      desc: "2 Darts: Clear the inner clockwork and outer orbit loop!",
+      darts: 2,
+      balloons: [
+        { key: "GOLD",  x: 0.50, y: 0.38, dir: "RIGHT" },
+        { key: "PINK",  x: 0.65, y: 0.38, dir: "DOWN" },
+        { key: "RED",   x: 0.65, y: 0.54, dir: "LEFT" },
+        { key: "BLUE",  x: 0.35, y: 0.54, dir: "UP" },
+        { key: "GREEN", x: 0.35, y: 0.38, dir: "RIGHT" },
+        { key: "BOMB",  x: 0.50, y: 0.20, dir: "ALL" },
+        { key: "BLUE",  x: 0.82, y: 0.20, dir: "DOWN" },
+        { key: "GREEN", x: 0.82, y: 0.72, dir: "LEFT" },
+        { key: "RED",   x: 0.18, y: 0.20, dir: "DOWN" },
+        { key: "PINK",  x: 0.18, y: 0.72, dir: "RIGHT" },
+        { key: "GOLD",  x: 0.50, y: 0.72, dir: "UP" }
+      ]
+    },
+    {
+      id: 19,
+      name: "The Zigzag Cascade",
+      desc: "1 Dart: Trace back and forth down the zig-zag staircase!",
+      darts: 1,
+      balloons: [
+        { key: "RED",   x: 0.20, y: 0.20, dir: "RIGHT" },
+        { key: "BLUE",  x: 0.80, y: 0.20, dir: "DOWN" },
+        { key: "GREEN", x: 0.80, y: 0.32, dir: "LEFT" },
+        { key: "PINK",  x: 0.20, y: 0.32, dir: "DOWN" },
+        { key: "GOLD",  x: 0.20, y: 0.44, dir: "RIGHT" },
+        { key: "BLUE",  x: 0.80, y: 0.44, dir: "DOWN" },
+        { key: "BOMB",  x: 0.80, y: 0.56, dir: "LEFT" },
+        { key: "PINK",  x: 0.20, y: 0.56, dir: "DOWN" },
+        { key: "GREEN", x: 0.20, y: 0.68, dir: "RIGHT" },
+        { key: "GOLD",  x: 0.50, y: 0.68, dir: "RIGHT" },
+        { key: "RED",   x: 0.80, y: 0.68, dir: "UP" }
+      ]
+    },
+    {
+      id: 20,
+      name: "Cross of the Valkyrie",
+      desc: "2 Darts: Master vertical triggers and twin perimeter TNTs!",
+      darts: 2,
+      balloons: [
+        { key: "GOLD",  x: 0.50, y: 0.48, dir: "VERT" },
+        { key: "RED",   x: 0.50, y: 0.28, dir: "HORIZ" },
+        { key: "BLUE",  x: 0.25, y: 0.28, dir: "DOWN" },
+        { key: "BLUE",  x: 0.75, y: 0.28, dir: "DOWN" },
+        { key: "GREEN", x: 0.25, y: 0.38, dir: "DOWN" },
+        { key: "GREEN", x: 0.75, y: 0.38, dir: "DOWN" },
+        { key: "PINK",  x: 0.50, y: 0.68, dir: "HORIZ" },
+        { key: "GREEN", x: 0.25, y: 0.68, dir: "UP" },
+        { key: "GREEN", x: 0.75, y: 0.68, dir: "UP" },
+        { key: "BLUE",  x: 0.25, y: 0.58, dir: "UP" },
+        { key: "BLUE",  x: 0.75, y: 0.58, dir: "UP" },
+        { key: "BOMB",  x: 0.25, y: 0.48, dir: "HORIZ" },
+        { key: "BOMB",  x: 0.75, y: 0.48, dir: "HORIZ" },
+        { key: "GOLD",  x: 0.12, y: 0.48, dir: "RIGHT" },
+        { key: "GOLD",  x: 0.88, y: 0.48, dir: "LEFT" }
+      ]
+    },
+    {
+      id: 21,
+      name: "The Quantum Core",
+      desc: "2 Darts: Twin quantum circuits converging at the core!",
+      darts: 2,
+      balloons: [
+        { key: "BLUE",   x: 0.25, y: 0.32, dir: "DOWN" },
+        { key: "PINK",   x: 0.25, y: 0.54, dir: "RIGHT" },
+        { key: "BOMB",   x: 0.42, y: 0.54, dir: "ALL" },
+        { key: "RED",    x: 0.42, y: 0.32, dir: "LEFT" },
+        { key: "GOLD",   x: 0.42, y: 0.72, dir: "UP" },
+        { key: "GREEN",  x: 0.75, y: 0.32, dir: "DOWN" },
+        { key: "PINK",   x: 0.75, y: 0.54, dir: "LEFT" },
+        { key: "BOMB",   x: 0.58, y: 0.54, dir: "ALL" },
+        { key: "RED",    x: 0.58, y: 0.32, dir: "RIGHT" },
+        { key: "GOLD",   x: 0.58, y: 0.72, dir: "UP" },
+        { key: "FREEZE", x: 0.50, y: 0.32, dir: "DOWN" }
+      ]
+    },
+    {
+      id: 22,
+      name: "Twin Vortex",
+      desc: "2 Darts: Opposing clockwise & counter-clockwise whirlwinds!",
+      darts: 2,
+      balloons: [
+        { key: "RED",   x: 0.20, y: 0.30, dir: "RIGHT" },
+        { key: "BLUE",  x: 0.42, y: 0.30, dir: "DOWN" },
+        { key: "PINK",  x: 0.42, y: 0.56, dir: "LEFT" },
+        { key: "GREEN", x: 0.20, y: 0.56, dir: "UP" },
+        { key: "GOLD",  x: 0.20, y: 0.43, dir: "RIGHT" },
+        { key: "BOMB",  x: 0.42, y: 0.43, dir: "LEFT" },
+        { key: "RED",   x: 0.80, y: 0.30, dir: "LEFT" },
+        { key: "BLUE",  x: 0.58, y: 0.30, dir: "DOWN" },
+        { key: "PINK",  x: 0.58, y: 0.56, dir: "RIGHT" },
+        { key: "GREEN", x: 0.80, y: 0.56, dir: "UP" },
+        { key: "GOLD",  x: 0.80, y: 0.43, dir: "LEFT" },
+        { key: "BOMB",  x: 0.58, y: 0.43, dir: "RIGHT" }
+      ]
+    },
+    {
+      id: 23,
+      name: "The Labyrinth Box",
+      desc: "2 Darts: Loop the outer perimeter then detonate the inner vault!",
+      darts: 2,
+      balloons: [
+        { key: "RED",    x: 0.18, y: 0.20, dir: "RIGHT" },
+        { key: "RED",    x: 0.50, y: 0.20, dir: "RIGHT" },
+        { key: "BLUE",   x: 0.82, y: 0.20, dir: "DOWN" },
+        { key: "BLUE",   x: 0.82, y: 0.45, dir: "DOWN" },
+        { key: "GREEN",  x: 0.82, y: 0.70, dir: "LEFT" },
+        { key: "GREEN",  x: 0.50, y: 0.70, dir: "LEFT" },
+        { key: "PINK",   x: 0.18, y: 0.70, dir: "UP" },
+        { key: "PINK",   x: 0.18, y: 0.45, dir: "UP" },
+        { key: "BOMB",   x: 0.50, y: 0.45, dir: "ALL" },
+        { key: "GOLD",   x: 0.34, y: 0.45, dir: "UP" },
+        { key: "FREEZE", x: 0.34, y: 0.32, dir: "RIGHT" },
+        { key: "GOLD",   x: 0.66, y: 0.45, dir: "DOWN" },
+        { key: "FREEZE", x: 0.66, y: 0.58, dir: "LEFT" },
+        { key: "PINK",   x: 0.50, y: 0.32, dir: "LEFT" },
+        { key: "PINK",   x: 0.50, y: 0.58, dir: "RIGHT" }
+      ]
+    },
+    {
+      id: 24,
+      name: "Cosmic Starburst",
+      desc: "3 Darts: Tri-tiered bomb explosions cascading across the screen!",
+      darts: 3,
+      balloons: [
+        { key: "RED",   x: 0.20, y: 0.25, dir: "RIGHT" },
+        { key: "BOMB",  x: 0.50, y: 0.25, dir: "ALL" },
+        { key: "RED",   x: 0.80, y: 0.25, dir: "LEFT" },
+        { key: "GOLD",  x: 0.50, y: 0.12, dir: "DOWN" },
+        { key: "BLUE",  x: 0.20, y: 0.45, dir: "RIGHT" },
+        { key: "BOMB",  x: 0.50, y: 0.45, dir: "ALL" },
+        { key: "BLUE",  x: 0.80, y: 0.45, dir: "LEFT" },
+        { key: "GREEN", x: 0.35, y: 0.45, dir: "UP" },
+        { key: "GREEN", x: 0.65, y: 0.45, dir: "DOWN" },
+        { key: "PINK",  x: 0.20, y: 0.65, dir: "RIGHT" },
+        { key: "BOMB",  x: 0.50, y: 0.65, dir: "ALL" },
+        { key: "PINK",  x: 0.80, y: 0.65, dir: "LEFT" },
+        { key: "GOLD",  x: 0.50, y: 0.78, dir: "UP" }
+      ]
+    },
+    {
+      id: 25,
+      name: "Grand Apex Master Boss",
+      isBoss: true,
+      desc: "3 Darts: 16 directional balloons! The ultimate grandmaster finale!",
+      darts: 3,
+      balloons: [
+        { key: "RED",    x: 0.25, y: 0.24, dir: "RIGHT" },
+        { key: "BOMB",   x: 0.50, y: 0.24, dir: "ALL" },
+        { key: "BLUE",   x: 0.75, y: 0.24, dir: "LEFT" },
+        { key: "GOLD",   x: 0.50, y: 0.12, dir: "DOWN" },
+        { key: "FREEZE", x: 0.18, y: 0.42, dir: "HORIZ" },
+        { key: "PINK",   x: 0.34, y: 0.42, dir: "DOWN" },
+        { key: "GREEN",  x: 0.34, y: 0.56, dir: "RIGHT" },
+        { key: "FREEZE", x: 0.82, y: 0.42, dir: "HORIZ" },
+        { key: "PINK",   x: 0.66, y: 0.42, dir: "DOWN" },
+        { key: "GREEN",  x: 0.66, y: 0.56, dir: "LEFT" },
+        { key: "GOLD",   x: 0.50, y: 0.42, dir: "VERT" },
+        { key: "BOMB",   x: 0.50, y: 0.56, dir: "ALL" },
+        { key: "BLUE",   x: 0.25, y: 0.70, dir: "RIGHT" },
+        { key: "PINK",   x: 0.50, y: 0.70, dir: "HORIZ" },
+        { key: "GOLD",   x: 0.25, y: 0.78, dir: "UP" },
+        { key: "GOLD",   x: 0.75, y: 0.78, dir: "UP" },
+        { key: "RED",    x: 0.75, y: 0.70, dir: "LEFT" }
+      ]
+    },
+{
+        id: 26,
+        name: "Spiral Galaxy",
+        desc: "1 Dart: Clockwise inward spiral funnels directly into the center TNT bomb!",
+        darts: 1,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.2,
+                y: 0.22,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.8,
+                y: 0.22,
+                dir: "DOWN"
+            },
+            {
+                key: "GREEN",
+                x: 0.8,
+                y: 0.68,
+                dir: "LEFT"
+            },
+            {
+                key: "PINK",
+                x: 0.2,
+                y: 0.68,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.2,
+                y: 0.38,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.65,
+                y: 0.38,
+                dir: "DOWN"
+            },
+            {
+                key: "GREEN",
+                x: 0.65,
+                y: 0.52,
+                dir: "LEFT"
+            },
+            {
+                key: "BOMB",
+                x: 0.38,
+                y: 0.52,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.52,
+                dir: "UP"
+            }
+        ]
+    },
+    {
+        id: 27,
+        name: "Dual Pendulum",
+        desc: "2 Darts: Left and right synchronized swings meet at the horizontal nexus!",
+        darts: 2,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.22,
+                y: 0.22,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.22,
+                y: 0.45,
+                dir: "RIGHT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.45,
+                dir: "VERT"
+            },
+            {
+                key: "RED",
+                x: 0.78,
+                y: 0.22,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.78,
+                y: 0.45,
+                dir: "LEFT"
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.22,
+                dir: "HORIZ"
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.68,
+                dir: "HORIZ"
+            },
+            {
+                key: "BOMB",
+                x: 0.22,
+                y: 0.68,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.78,
+                y: 0.68,
+                dir: "ALL"
+            }
+        ]
+    },
+    {
+        id: 28,
+        name: "Hall of Mirrors",
+        desc: "2 Darts: Symmetrical reflected lasers trigger the ceiling bomb pair!",
+        darts: 2,
+        balloons: [
+            {
+                key: "PINK",
+                x: 0.2,
+                y: 0.65,
+                dir: "RIGHT"
+            },
+            {
+                key: "GREEN",
+                x: 0.4,
+                y: 0.65,
+                dir: "UP"
+            },
+            {
+                key: "BOMB",
+                x: 0.4,
+                y: 0.3,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.2,
+                y: 0.3,
+                dir: "RIGHT"
+            },
+            {
+                key: "PINK",
+                x: 0.8,
+                y: 0.65,
+                dir: "LEFT"
+            },
+            {
+                key: "GREEN",
+                x: 0.6,
+                y: 0.65,
+                dir: "UP"
+            },
+            {
+                key: "BOMB",
+                x: 0.6,
+                y: 0.3,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.8,
+                y: 0.3,
+                dir: "LEFT"
+            }
+        ]
+    },
+    {
+        id: 29,
+        name: "Cross of Fire",
+        desc: "1 Dart: Central horizontal beam activates dual vertical booster columns!",
+        darts: 1,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.48,
+                dir: "HORIZ"
+            },
+            {
+                key: "RED",
+                x: 0.22,
+                y: 0.48,
+                dir: "UP"
+            },
+            {
+                key: "BLUE",
+                x: 0.78,
+                y: 0.48,
+                dir: "UP"
+            },
+            {
+                key: "GREEN",
+                x: 0.22,
+                y: 0.26,
+                dir: "RIGHT"
+            },
+            {
+                key: "GREEN",
+                x: 0.78,
+                y: 0.26,
+                dir: "LEFT"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.26,
+                dir: "ALL"
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.12,
+                dir: "DOWN"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.7,
+                dir: "ALL"
+            }
+        ]
+    },
+    {
+        id: 30,
+        name: "Blimp Core Mid-Boss",
+        desc: "2 Darts: High-difficulty Mid-Boss! Shatter outer ring then ignite core!",
+        darts: 2,
+        isMidBoss: true,
+        balloons: [
+            {
+                key: "FREEZE",
+                x: 0.5,
+                y: 0.2,
+                dir: "HORIZ"
+            },
+            {
+                key: "RED",
+                x: 0.2,
+                y: 0.2,
+                dir: "DOWN"
+            },
+            {
+                key: "RED",
+                x: 0.8,
+                y: 0.2,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.2,
+                y: 0.5,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.8,
+                y: 0.5,
+                dir: "LEFT"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.5,
+                dir: "ALL"
+            },
+            {
+                key: "GREEN",
+                x: 0.35,
+                y: 0.35,
+                dir: "DOWN"
+            },
+            {
+                key: "GREEN",
+                x: 0.65,
+                y: 0.35,
+                dir: "DOWN"
+            },
+            {
+                key: "PINK",
+                x: 0.35,
+                y: 0.65,
+                dir: "RIGHT"
+            },
+            {
+                key: "PINK",
+                x: 0.65,
+                y: 0.65,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.65,
+                dir: "HORIZ"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.78,
+                dir: "UP"
+            }
+        ]
+    },
+    {
+        id: 31,
+        name: "Prism Shards",
+        desc: "2 Darts: Double freeze crystals fracture lasers into diagonal quadrants!",
+        darts: 2,
+        balloons: [
+            {
+                key: "FREEZE",
+                x: 0.35,
+                y: 0.3,
+                dir: "HORIZ"
+            },
+            {
+                key: "RED",
+                x: 0.18,
+                y: 0.3,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.18,
+                y: 0.6,
+                dir: "RIGHT"
+            },
+            {
+                key: "FREEZE",
+                x: 0.65,
+                y: 0.3,
+                dir: "HORIZ"
+            },
+            {
+                key: "RED",
+                x: 0.82,
+                y: 0.3,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.82,
+                y: 0.6,
+                dir: "LEFT"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.6,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.4,
+                dir: "VERT"
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.2,
+                dir: "DOWN"
+            }
+        ]
+    },
+    {
+        id: 32,
+        name: "Quad TNT Grid",
+        desc: "2 Darts: 4 corner bomb stations! Trigger the perimeter needle circuit!",
+        darts: 2,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.22,
+                y: 0.24,
+                dir: "ALL"
+            },
+            {
+                key: "BLUE",
+                x: 0.5,
+                y: 0.24,
+                dir: "RIGHT"
+            },
+            {
+                key: "BOMB",
+                x: 0.78,
+                y: 0.24,
+                dir: "ALL"
+            },
+            {
+                key: "RED",
+                x: 0.78,
+                y: 0.48,
+                dir: "DOWN"
+            },
+            {
+                key: "BOMB",
+                x: 0.78,
+                y: 0.72,
+                dir: "ALL"
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.72,
+                dir: "LEFT"
+            },
+            {
+                key: "BOMB",
+                x: 0.22,
+                y: 0.72,
+                dir: "ALL"
+            },
+            {
+                key: "PINK",
+                x: 0.22,
+                y: 0.48,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.48,
+                dir: "ALL"
+            }
+        ]
+    },
+    {
+        id: 33,
+        name: "Staircase of Solitude",
+        desc: "1 Dart: Trace step-by-step from bottom-left all the way to high heaven!",
+        darts: 1,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.18,
+                y: 0.72,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.34,
+                y: 0.72,
+                dir: "UP"
+            },
+            {
+                key: "GREEN",
+                x: 0.34,
+                y: 0.56,
+                dir: "RIGHT"
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.56,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.4,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.66,
+                y: 0.4,
+                dir: "UP"
+            },
+            {
+                key: "BOMB",
+                x: 0.66,
+                y: 0.24,
+                dir: "ALL"
+            },
+            {
+                key: "RED",
+                x: 0.82,
+                y: 0.24,
+                dir: "DOWN"
+            },
+            {
+                key: "GOLD",
+                x: 0.82,
+                y: 0.56,
+                dir: "LEFT"
+            }
+        ]
+    },
+    {
+        id: 34,
+        name: "Phoenix Wings",
+        desc: "2 Darts: Left wing and right wing sweep inward to apex gold core!",
+        darts: 2,
+        balloons: [
+            {
+                key: "PINK",
+                x: 0.16,
+                y: 0.32,
+                dir: "DOWN"
+            },
+            {
+                key: "RED",
+                x: 0.16,
+                y: 0.6,
+                dir: "RIGHT"
+            },
+            {
+                key: "GREEN",
+                x: 0.36,
+                y: 0.6,
+                dir: "UP"
+            },
+            {
+                key: "PINK",
+                x: 0.84,
+                y: 0.32,
+                dir: "DOWN"
+            },
+            {
+                key: "RED",
+                x: 0.84,
+                y: 0.6,
+                dir: "LEFT"
+            },
+            {
+                key: "GREEN",
+                x: 0.64,
+                y: 0.6,
+                dir: "UP"
+            },
+            {
+                key: "BOMB",
+                x: 0.36,
+                y: 0.32,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.64,
+                y: 0.32,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.32,
+                dir: "VERT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.6,
+                dir: "UP"
+            }
+        ]
+    },
+    {
+        id: 35,
+        name: "Apex Sovereign Boss",
+        desc: "3 Darts: Difficult Boss! 16-node tactical matrix with dual bomb rings!",
+        darts: 3,
+        isBoss: true,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.15,
+                dir: "DOWN"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.3,
+                dir: "ALL"
+            },
+            {
+                key: "RED",
+                x: 0.22,
+                y: 0.3,
+                dir: "RIGHT"
+            },
+            {
+                key: "RED",
+                x: 0.78,
+                y: 0.3,
+                dir: "LEFT"
+            },
+            {
+                key: "FREEZE",
+                x: 0.22,
+                y: 0.45,
+                dir: "HORIZ"
+            },
+            {
+                key: "BLUE",
+                x: 0.38,
+                y: 0.45,
+                dir: "DOWN"
+            },
+            {
+                key: "FREEZE",
+                x: 0.78,
+                y: 0.45,
+                dir: "HORIZ"
+            },
+            {
+                key: "BLUE",
+                x: 0.62,
+                y: 0.45,
+                dir: "DOWN"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.58,
+                dir: "ALL"
+            },
+            {
+                key: "GREEN",
+                x: 0.38,
+                y: 0.58,
+                dir: "RIGHT"
+            },
+            {
+                key: "GREEN",
+                x: 0.62,
+                y: 0.58,
+                dir: "LEFT"
+            },
+            {
+                key: "PINK",
+                x: 0.22,
+                y: 0.72,
+                dir: "RIGHT"
+            },
+            {
+                key: "PINK",
+                x: 0.78,
+                y: 0.72,
+                dir: "LEFT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.72,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.38,
+                y: 0.3,
+                dir: "DOWN"
+            },
+            {
+                key: "GOLD",
+                x: 0.62,
+                y: 0.3,
+                dir: "DOWN"
+            }
+        ]
+    },
+    {
+        id: 36,
+        name: "The Hourglass",
+        desc: "2 Darts: Top chamber funnels through center choke into lower reservoir!",
+        darts: 2,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.25,
+                y: 0.22,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.75,
+                y: 0.22,
+                dir: "LEFT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.22,
+                dir: "DOWN"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "GREEN",
+                x: 0.3,
+                y: 0.65,
+                dir: "RIGHT"
+            },
+            {
+                key: "PINK",
+                x: 0.7,
+                y: 0.65,
+                dir: "LEFT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.65,
+                dir: "UP"
+            },
+            {
+                key: "BLUE",
+                x: 0.5,
+                y: 0.78,
+                dir: "UP"
+            }
+        ]
+    },
+    {
+        id: 37,
+        name: "Trinity Rings",
+        desc: "3 Darts: 3 interconnected triangular circuits sharing corner nodes!",
+        darts: 3,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.5,
+                y: 0.2,
+                dir: "HORIZ"
+            },
+            {
+                key: "BLUE",
+                x: 0.25,
+                y: 0.4,
+                dir: "UP"
+            },
+            {
+                key: "BLUE",
+                x: 0.75,
+                y: 0.4,
+                dir: "UP"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.4,
+                dir: "ALL"
+            },
+            {
+                key: "GREEN",
+                x: 0.25,
+                y: 0.65,
+                dir: "RIGHT"
+            },
+            {
+                key: "GREEN",
+                x: 0.75,
+                y: 0.65,
+                dir: "LEFT"
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.65,
+                dir: "VERT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.8,
+                dir: "UP"
+            }
+        ]
+    },
+    {
+        id: 38,
+        name: "Laser Labyrinth",
+        desc: "2 Darts: 90-degree corner mirrors guide darts across 8 reflection turns!",
+        darts: 2,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.18,
+                y: 0.25,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.18,
+                y: 0.55,
+                dir: "RIGHT"
+            },
+            {
+                key: "GREEN",
+                x: 0.42,
+                y: 0.55,
+                dir: "UP"
+            },
+            {
+                key: "PINK",
+                x: 0.42,
+                y: 0.35,
+                dir: "RIGHT"
+            },
+            {
+                key: "GOLD",
+                x: 0.65,
+                y: 0.35,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.65,
+                y: 0.68,
+                dir: "RIGHT"
+            },
+            {
+                key: "BOMB",
+                x: 0.82,
+                y: 0.68,
+                dir: "ALL"
+            },
+            {
+                key: "RED",
+                x: 0.82,
+                y: 0.25,
+                dir: "LEFT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.25,
+                dir: "DOWN"
+            }
+        ]
+    },
+    {
+        id: 39,
+        name: "Hypercube Array",
+        desc: "2 Darts: Nested 4-balloon inner square inside an 8-balloon outer frame!",
+        darts: 2,
+        balloons: [
+            {
+                key: "BLUE",
+                x: 0.2,
+                y: 0.22,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.8,
+                y: 0.22,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.8,
+                y: 0.7,
+                dir: "LEFT"
+            },
+            {
+                key: "BLUE",
+                x: 0.2,
+                y: 0.7,
+                dir: "UP"
+            },
+            {
+                key: "RED",
+                x: 0.38,
+                y: 0.38,
+                dir: "RIGHT"
+            },
+            {
+                key: "RED",
+                x: 0.62,
+                y: 0.38,
+                dir: "DOWN"
+            },
+            {
+                key: "RED",
+                x: 0.62,
+                y: 0.54,
+                dir: "LEFT"
+            },
+            {
+                key: "RED",
+                x: 0.38,
+                y: 0.54,
+                dir: "UP"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.46,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.22,
+                dir: "DOWN"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.7,
+                dir: "UP"
+            }
+        ]
+    },
+    {
+        id: 40,
+        name: "Nebula Titan Mid-Boss",
+        desc: "3 Darts: Tactical Mid-Boss! Twin bomb pylons flank the cosmic core!",
+        darts: 3,
+        isMidBoss: true,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.25,
+                y: 0.3,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.75,
+                y: 0.3,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.3,
+                dir: "VERT"
+            },
+            {
+                key: "FREEZE",
+                x: 0.5,
+                y: 0.16,
+                dir: "HORIZ"
+            },
+            {
+                key: "RED",
+                x: 0.25,
+                y: 0.5,
+                dir: "RIGHT"
+            },
+            {
+                key: "RED",
+                x: 0.75,
+                y: 0.5,
+                dir: "LEFT"
+            },
+            {
+                key: "BLUE",
+                x: 0.5,
+                y: 0.5,
+                dir: "HORIZ"
+            },
+            {
+                key: "GREEN",
+                x: 0.35,
+                y: 0.66,
+                dir: "UP"
+            },
+            {
+                key: "GREEN",
+                x: 0.65,
+                y: 0.66,
+                dir: "UP"
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.66,
+                dir: "VERT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.8,
+                dir: "UP"
+            },
+            {
+                key: "RED",
+                x: 0.15,
+                y: 0.5,
+                dir: "RIGHT"
+            },
+            {
+                key: "RED",
+                x: 0.85,
+                y: 0.5,
+                dir: "LEFT"
+            }
+        ]
+    },
+    {
+        id: 41,
+        name: "Sonic Wave",
+        desc: "2 Darts: Sinusoidal cascade oscillating across the field!",
+        darts: 2,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.18,
+                y: 0.35,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.18,
+                y: 0.6,
+                dir: "RIGHT"
+            },
+            {
+                key: "GREEN",
+                x: 0.38,
+                y: 0.6,
+                dir: "UP"
+            },
+            {
+                key: "PINK",
+                x: 0.38,
+                y: 0.35,
+                dir: "RIGHT"
+            },
+            {
+                key: "GOLD",
+                x: 0.62,
+                y: 0.35,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.62,
+                y: 0.6,
+                dir: "RIGHT"
+            },
+            {
+                key: "BOMB",
+                x: 0.82,
+                y: 0.6,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.82,
+                y: 0.35,
+                dir: "LEFT"
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.48,
+                dir: "HORIZ"
+            }
+        ]
+    },
+    {
+        id: 42,
+        name: "Cascade Waterfall",
+        desc: "1 Dart: Single top domino triggers vertical plunge that bursts horizontally!",
+        darts: 1,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.18,
+                dir: "DOWN"
+            },
+            {
+                key: "RED",
+                x: 0.5,
+                y: 0.34,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.5,
+                y: 0.5,
+                dir: "DOWN"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.66,
+                dir: "ALL"
+            },
+            {
+                key: "GREEN",
+                x: 0.22,
+                y: 0.66,
+                dir: "UP"
+            },
+            {
+                key: "GREEN",
+                x: 0.78,
+                y: 0.66,
+                dir: "UP"
+            },
+            {
+                key: "PINK",
+                x: 0.22,
+                y: 0.34,
+                dir: "RIGHT"
+            },
+            {
+                key: "PINK",
+                x: 0.78,
+                y: 0.34,
+                dir: "LEFT"
+            }
+        ]
+    },
+    {
+        id: 43,
+        name: "Infinity Gate",
+        desc: "2 Darts: Figure-8 double circuit intersecting at the central nexus!",
+        darts: 2,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.3,
+                y: 0.25,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.7,
+                y: 0.25,
+                dir: "DOWN"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "GREEN",
+                x: 0.3,
+                y: 0.65,
+                dir: "UP"
+            },
+            {
+                key: "PINK",
+                x: 0.7,
+                y: 0.65,
+                dir: "LEFT"
+            },
+            {
+                key: "BOMB",
+                x: 0.3,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.7,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.25,
+                dir: "DOWN"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.65,
+                dir: "UP"
+            }
+        ]
+    },
+    {
+        id: 44,
+        name: "Solar Flares",
+        desc: "2 Darts: Center radiant sun bursts rays outward into 8 orbiting satellites!",
+        darts: 2,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.2,
+                dir: "DOWN"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.7,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.2,
+                y: 0.45,
+                dir: "RIGHT"
+            },
+            {
+                key: "GOLD",
+                x: 0.8,
+                y: 0.45,
+                dir: "LEFT"
+            },
+            {
+                key: "RED",
+                x: 0.28,
+                y: 0.28,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.72,
+                y: 0.28,
+                dir: "DOWN"
+            },
+            {
+                key: "GREEN",
+                x: 0.72,
+                y: 0.62,
+                dir: "LEFT"
+            },
+            {
+                key: "PINK",
+                x: 0.28,
+                y: 0.62,
+                dir: "UP"
+            }
+        ]
+    },
+    {
+        id: 45,
+        name: "Dreadnought Mid-Boss",
+        desc: "3 Darts: Heavy Mid-Boss! 15 directional balloons protecting triple bomb array!",
+        darts: 3,
+        isMidBoss: true,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.22,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.3,
+                y: 0.46,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.7,
+                y: 0.46,
+                dir: "ALL"
+            },
+            {
+                key: "FREEZE",
+                x: 0.5,
+                y: 0.46,
+                dir: "VERT"
+            },
+            {
+                key: "RED",
+                x: 0.16,
+                y: 0.22,
+                dir: "RIGHT"
+            },
+            {
+                key: "RED",
+                x: 0.84,
+                y: 0.22,
+                dir: "LEFT"
+            },
+            {
+                key: "BLUE",
+                x: 0.16,
+                y: 0.46,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.84,
+                y: 0.46,
+                dir: "DOWN"
+            },
+            {
+                key: "GREEN",
+                x: 0.3,
+                y: 0.68,
+                dir: "RIGHT"
+            },
+            {
+                key: "GREEN",
+                x: 0.7,
+                y: 0.68,
+                dir: "LEFT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.68,
+                dir: "UP"
+            },
+            {
+                key: "PINK",
+                x: 0.16,
+                y: 0.68,
+                dir: "RIGHT"
+            },
+            {
+                key: "PINK",
+                x: 0.84,
+                y: 0.68,
+                dir: "LEFT"
+            },
+            {
+                key: "GOLD",
+                x: 0.3,
+                y: 0.22,
+                dir: "DOWN"
+            },
+            {
+                key: "GOLD",
+                x: 0.7,
+                y: 0.22,
+                dir: "DOWN"
+            }
+        ]
+    },
+    {
+        id: 46,
+        name: "Clockwork Gears",
+        desc: "2 Darts: Twin interlocking cogs rotating clockwise and counter-clockwise!",
+        darts: 2,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.3,
+                y: 0.28,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.5,
+                y: 0.28,
+                dir: "DOWN"
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.48,
+                dir: "LEFT"
+            },
+            {
+                key: "PINK",
+                x: 0.3,
+                y: 0.48,
+                dir: "UP"
+            },
+            {
+                key: "RED",
+                x: 0.7,
+                y: 0.48,
+                dir: "DOWN"
+            },
+            {
+                key: "BLUE",
+                x: 0.7,
+                y: 0.68,
+                dir: "LEFT"
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.68,
+                dir: "UP"
+            },
+            {
+                key: "BOMB",
+                x: 0.4,
+                y: 0.38,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.6,
+                y: 0.58,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.7,
+                y: 0.28,
+                dir: "DOWN"
+            }
+        ]
+    },
+    {
+        id: 47,
+        name: "Diamond Citadel",
+        desc: "2 Darts: Double diamond perimeter shielding the inner golden treasury!",
+        darts: 2,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.25,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.65,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.3,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.7,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "BLUE",
+                x: 0.2,
+                y: 0.25,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.8,
+                y: 0.25,
+                dir: "LEFT"
+            },
+            {
+                key: "RED",
+                x: 0.2,
+                y: 0.65,
+                dir: "RIGHT"
+            },
+            {
+                key: "RED",
+                x: 0.8,
+                y: 0.65,
+                dir: "LEFT"
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.12,
+                dir: "DOWN"
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.78,
+                dir: "UP"
+            }
+        ]
+    },
+    {
+        id: 48,
+        name: "Quantum Entanglement",
+        desc: "2 Darts: Cross-quadrant mirrors where each popped node triggers its twin!",
+        darts: 2,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.22,
+                y: 0.25,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.78,
+                y: 0.25,
+                dir: "DOWN"
+            },
+            {
+                key: "GREEN",
+                x: 0.78,
+                y: 0.65,
+                dir: "LEFT"
+            },
+            {
+                key: "PINK",
+                x: 0.22,
+                y: 0.65,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.25,
+                dir: "VERT"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.65,
+                dir: "VERT"
+            },
+            {
+                key: "BOMB",
+                x: 0.22,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.78,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.45,
+                dir: "HORIZ"
+            }
+        ]
+    },
+    {
+        id: 49,
+        name: "Celestial Compass",
+        desc: "3 Darts: 8-point nautical star with multi-stage cascade reactions!",
+        darts: 3,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.15,
+                dir: "DOWN"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.75,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.18,
+                y: 0.45,
+                dir: "RIGHT"
+            },
+            {
+                key: "GOLD",
+                x: 0.82,
+                y: 0.45,
+                dir: "LEFT"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.45,
+                dir: "ALL"
+            },
+            {
+                key: "RED",
+                x: 0.32,
+                y: 0.3,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.68,
+                y: 0.3,
+                dir: "DOWN"
+            },
+            {
+                key: "GREEN",
+                x: 0.68,
+                y: 0.6,
+                dir: "LEFT"
+            },
+            {
+                key: "PINK",
+                x: 0.32,
+                y: 0.6,
+                dir: "UP"
+            },
+            {
+                key: "RED",
+                x: 0.5,
+                y: 0.3,
+                dir: "HORIZ"
+            },
+            {
+                key: "BLUE",
+                x: 0.5,
+                y: 0.6,
+                dir: "HORIZ"
+            }
+        ]
+    },
+    {
+        id: 50,
+        name: "Grand Zenith Apex Sovereign",
+        desc: "4 Darts: The Grand Finale! 20-node masterwork grid of cascading fireworks!",
+        darts: 4,
+        isBoss: true,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.12,
+                dir: "DOWN"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.26,
+                dir: "ALL"
+            },
+            {
+                key: "RED",
+                x: 0.22,
+                y: 0.26,
+                dir: "RIGHT"
+            },
+            {
+                key: "RED",
+                x: 0.78,
+                y: 0.26,
+                dir: "LEFT"
+            },
+            {
+                key: "FREEZE",
+                x: 0.22,
+                y: 0.42,
+                dir: "HORIZ"
+            },
+            {
+                key: "FREEZE",
+                x: 0.78,
+                y: 0.42,
+                dir: "HORIZ"
+            },
+            {
+                key: "BOMB",
+                x: 0.38,
+                y: 0.42,
+                dir: "ALL"
+            },
+            {
+                key: "BOMB",
+                x: 0.62,
+                y: 0.42,
+                dir: "ALL"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.42,
+                dir: "VERT"
+            },
+            {
+                key: "BLUE",
+                x: 0.15,
+                y: 0.56,
+                dir: "RIGHT"
+            },
+            {
+                key: "BLUE",
+                x: 0.85,
+                y: 0.56,
+                dir: "LEFT"
+            },
+            {
+                key: "GREEN",
+                x: 0.38,
+                y: 0.56,
+                dir: "DOWN"
+            },
+            {
+                key: "GREEN",
+                x: 0.62,
+                y: 0.56,
+                dir: "DOWN"
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.56,
+                dir: "ALL"
+            },
+            {
+                key: "PINK",
+                x: 0.22,
+                y: 0.7,
+                dir: "RIGHT"
+            },
+            {
+                key: "PINK",
+                x: 0.78,
+                y: 0.7,
+                dir: "LEFT"
+            },
+            {
+                key: "GOLD",
+                x: 0.38,
+                y: 0.7,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.62,
+                y: 0.7,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.7,
+                dir: "UP"
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.82,
+                dir: "UP"
+            }
+        ]
     }
   ],
   SLING_STAGES: [
@@ -379,9 +2542,11 @@ window.BB = window.BB || {};
     },
     {
       id: 10,
-      name: "Carnival Master",
-      desc: "3 Arrows: 11 targets! The grand trickshot finale!",
-      arrows: 3,
+      name: "Carnival Blimp Mid-Boss",
+      desc: "4 Arrows: Defeat the Mini Blimp (5 HP) & clear 11 targets!",
+      arrows: 4,
+      isMidBoss: true,
+      bossHp: 5,
       balloons: [
         { key: "BOMB",  x: 0.50, y: 0.38 },
         { key: "GOLD",  x: 0.35, y: 0.24 },
@@ -536,9 +2701,11 @@ window.BB = window.BB || {};
     },
     {
       id: 20,
-      name: "King Blimp Siege",
-      desc: "4 Arrows: Massive fortress with explosive defenses!",
+      name: "Armored Blimp Mid-Boss",
+      desc: "4 Arrows: Defeat the Armored Mid-Boss (6 HP) & breach fort!",
       arrows: 4,
+      isMidBoss: true,
+      bossHp: 6,
       balloons: [
         { key: "BOMB",   x: 0.50, y: 0.36 },
         { key: "FREEZE", x: 0.35, y: 0.24 },
@@ -617,9 +2784,11 @@ window.BB = window.BB || {};
     },
     {
       id: 25,
-      name: "Grand Archery Master",
-      desc: "5 Arrows: 15 targets! The ultimate fantasy trickshot championship!",
-      arrows: 5,
+      name: "Grand Archery Titan Boss",
+      desc: "6 Arrows: Defeat Apex Titan Boss (8 HP) & clear 15 targets!",
+      arrows: 6,
+      isBoss: true,
+      bossHp: 8,
       balloons: [
         { key: "GOLD",   x: 0.50, y: 0.16 },
         { key: "FREEZE", x: 0.35, y: 0.24 },
@@ -637,6 +2806,1201 @@ window.BB = window.BB || {};
         { key: "GOLD",   x: 0.40, y: 0.58 },
         { key: "GOLD",   x: 0.60, y: 0.58 }
       ]
+    },
+{
+        id: 26,
+        name: "Ricochet Canyon",
+        desc: "3 Arrows: Bank your shots off the left and right canyon walls!",
+        arrows: 3,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.16,
+                y: 0.22
+            },
+            {
+                key: "GOLD",
+                x: 0.84,
+                y: 0.22
+            },
+            {
+                key: "RED",
+                x: 0.16,
+                y: 0.36
+            },
+            {
+                key: "RED",
+                x: 0.84,
+                y: 0.36
+            },
+            {
+                key: "BLUE",
+                x: 0.5,
+                y: 0.46
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.3
+            }
+        ]
+    },
+    {
+        id: 27,
+        name: "The Floating Island",
+        desc: "3 Arrows: High-elevation cluster requiring maximum slingshot tension!",
+        arrows: 3,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.16
+            },
+            {
+                key: "FREEZE",
+                x: 0.36,
+                y: 0.22
+            },
+            {
+                key: "FREEZE",
+                x: 0.64,
+                y: 0.22
+            },
+            {
+                key: "RED",
+                x: 0.25,
+                y: 0.28
+            },
+            {
+                key: "RED",
+                x: 0.75,
+                y: 0.28
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.34
+            }
+        ]
+    },
+    {
+        id: 28,
+        name: "TNT Pendulum",
+        desc: "3 Arrows: Center explosive blast will wipe out the orbiting ring!",
+        arrows: 3,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.36
+            },
+            {
+                key: "GOLD",
+                x: 0.32,
+                y: 0.26
+            },
+            {
+                key: "GOLD",
+                x: 0.68,
+                y: 0.26
+            },
+            {
+                key: "BLUE",
+                x: 0.24,
+                y: 0.46
+            },
+            {
+                key: "BLUE",
+                x: 0.76,
+                y: 0.46
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.52
+            }
+        ]
+    },
+    {
+        id: 29,
+        name: "Double Barrier Breach",
+        desc: "3 Arrows: Shatter through dual ice barriers to reach gold cores!",
+        arrows: 3,
+        balloons: [
+            {
+                key: "FREEZE",
+                x: 0.35,
+                y: 0.38
+            },
+            {
+                key: "FREEZE",
+                x: 0.65,
+                y: 0.38
+            },
+            {
+                key: "RED",
+                x: 0.2,
+                y: 0.28
+            },
+            {
+                key: "RED",
+                x: 0.8,
+                y: 0.28
+            },
+            {
+                key: "GOLD",
+                x: 0.35,
+                y: 0.22
+            },
+            {
+                key: "GOLD",
+                x: 0.65,
+                y: 0.22
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.5
+            }
+        ]
+    },
+    {
+        id: 30,
+        name: "Ironclad Blimp Mid-Boss",
+        desc: "5 Arrows: Defeat the Ironclad Mid-Boss (8 HP) and destroy its escorts!",
+        arrows: 5,
+        isMidBoss: true,
+        bossHp: 8,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.25,
+                y: 0.38
+            },
+            {
+                key: "BOMB",
+                x: 0.75,
+                y: 0.38
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.16
+            },
+            {
+                key: "FREEZE",
+                x: 0.35,
+                y: 0.46
+            },
+            {
+                key: "FREEZE",
+                x: 0.65,
+                y: 0.46
+            },
+            {
+                key: "RED",
+                x: 0.18,
+                y: 0.24
+            },
+            {
+                key: "RED",
+                x: 0.82,
+                y: 0.24
+            },
+            {
+                key: "BLUE",
+                x: 0.5,
+                y: 0.56
+            }
+        ]
+    },
+    {
+        id: 31,
+        name: "Satellite Orbit",
+        desc: "3 Arrows: High arching shots through the gravitational ring!",
+        arrows: 3,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.34
+            },
+            {
+                key: "BLUE",
+                x: 0.3,
+                y: 0.24
+            },
+            {
+                key: "BLUE",
+                x: 0.7,
+                y: 0.24
+            },
+            {
+                key: "GREEN",
+                x: 0.22,
+                y: 0.38
+            },
+            {
+                key: "GREEN",
+                x: 0.78,
+                y: 0.38
+            },
+            {
+                key: "PINK",
+                x: 0.34,
+                y: 0.5
+            },
+            {
+                key: "PINK",
+                x: 0.66,
+                y: 0.5
+            }
+        ]
+    },
+    {
+        id: 32,
+        name: "The Zig-Zag Slalom",
+        desc: "4 Arrows: Staggered columns requiring precision left and right wall banks!",
+        arrows: 4,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.22,
+                y: 0.2
+            },
+            {
+                key: "BLUE",
+                x: 0.78,
+                y: 0.28
+            },
+            {
+                key: "GREEN",
+                x: 0.22,
+                y: 0.36
+            },
+            {
+                key: "PINK",
+                x: 0.78,
+                y: 0.44
+            },
+            {
+                key: "GOLD",
+                x: 0.22,
+                y: 0.52
+            },
+            {
+                key: "GOLD",
+                x: 0.78,
+                y: 0.6
+            }
+        ]
+    },
+    {
+        id: 33,
+        name: "Triple Explosive Cluster",
+        desc: "3 Arrows: 3 tactical TNT clusters ignite massive chained shockwaves!",
+        arrows: 3,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.25,
+                y: 0.28
+            },
+            {
+                key: "BOMB",
+                x: 0.75,
+                y: 0.28
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.48
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.22
+            },
+            {
+                key: "RED",
+                x: 0.15,
+                y: 0.38
+            },
+            {
+                key: "RED",
+                x: 0.85,
+                y: 0.38
+            },
+            {
+                key: "BLUE",
+                x: 0.35,
+                y: 0.56
+            },
+            {
+                key: "BLUE",
+                x: 0.65,
+                y: 0.56
+            }
+        ]
+    },
+    {
+        id: 34,
+        name: "High Altitude Piercer",
+        desc: "3 Arrows: Ceiling targets perched high above the stratosphere!",
+        arrows: 3,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.35,
+                y: 0.14
+            },
+            {
+                key: "GOLD",
+                x: 0.65,
+                y: 0.14
+            },
+            {
+                key: "FREEZE",
+                x: 0.5,
+                y: 0.22
+            },
+            {
+                key: "RED",
+                x: 0.24,
+                y: 0.26
+            },
+            {
+                key: "RED",
+                x: 0.76,
+                y: 0.26
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.36
+            }
+        ]
+    },
+    {
+        id: 35,
+        name: "Fortress Titan Boss",
+        desc: "6 Arrows: Colossal Boss! Defeat Fortress Titan (10 HP) & shatter defenses!",
+        arrows: 6,
+        isBoss: true,
+        bossHp: 10,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.22,
+                y: 0.32
+            },
+            {
+                key: "BOMB",
+                x: 0.78,
+                y: 0.32
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.16
+            },
+            {
+                key: "FREEZE",
+                x: 0.36,
+                y: 0.42
+            },
+            {
+                key: "FREEZE",
+                x: 0.64,
+                y: 0.42
+            },
+            {
+                key: "RED",
+                x: 0.16,
+                y: 0.48
+            },
+            {
+                key: "RED",
+                x: 0.84,
+                y: 0.48
+            },
+            {
+                key: "BLUE",
+                x: 0.34,
+                y: 0.56
+            },
+            {
+                key: "BLUE",
+                x: 0.66,
+                y: 0.56
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.62
+            }
+        ]
+    },
+    {
+        id: 36,
+        name: "Tunnel of Precision",
+        desc: "3 Arrows: Thread the needle right down the narrow middle corridor!",
+        arrows: 3,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.32,
+                y: 0.24
+            },
+            {
+                key: "RED",
+                x: 0.68,
+                y: 0.24
+            },
+            {
+                key: "BLUE",
+                x: 0.32,
+                y: 0.38
+            },
+            {
+                key: "BLUE",
+                x: 0.68,
+                y: 0.38
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.22
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.36
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.5
+            }
+        ]
+    },
+    {
+        id: 37,
+        name: "Diamond Phalanx",
+        desc: "4 Arrows: Sturdy diamond guard shielding twin golden treasures!",
+        arrows: 4,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.22
+            },
+            {
+                key: "RED",
+                x: 0.34,
+                y: 0.32
+            },
+            {
+                key: "RED",
+                x: 0.66,
+                y: 0.32
+            },
+            {
+                key: "BOMB",
+                x: 0.22,
+                y: 0.42
+            },
+            {
+                key: "BOMB",
+                x: 0.78,
+                y: 0.42
+            },
+            {
+                key: "BLUE",
+                x: 0.34,
+                y: 0.52
+            },
+            {
+                key: "BLUE",
+                x: 0.66,
+                y: 0.52
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.6
+            }
+        ]
+    },
+    {
+        id: 38,
+        name: "The Bouncing Helix",
+        desc: "4 Arrows: Double helix configuration rewarding rapid ricochets!",
+        arrows: 4,
+        balloons: [
+            {
+                key: "PINK",
+                x: 0.18,
+                y: 0.22
+            },
+            {
+                key: "GOLD",
+                x: 0.82,
+                y: 0.22
+            },
+            {
+                key: "BLUE",
+                x: 0.4,
+                y: 0.32
+            },
+            {
+                key: "BLUE",
+                x: 0.6,
+                y: 0.32
+            },
+            {
+                key: "GREEN",
+                x: 0.82,
+                y: 0.42
+            },
+            {
+                key: "PINK",
+                x: 0.18,
+                y: 0.42
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.52
+            }
+        ]
+    },
+    {
+        id: 39,
+        name: "Glacial Spires",
+        desc: "4 Arrows: Tall columns of freeze ice holding up gold peaks!",
+        arrows: 4,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.25,
+                y: 0.18
+            },
+            {
+                key: "FREEZE",
+                x: 0.25,
+                y: 0.3
+            },
+            {
+                key: "FREEZE",
+                x: 0.25,
+                y: 0.42
+            },
+            {
+                key: "GOLD",
+                x: 0.75,
+                y: 0.18
+            },
+            {
+                key: "FREEZE",
+                x: 0.75,
+                y: 0.3
+            },
+            {
+                key: "FREEZE",
+                x: 0.75,
+                y: 0.42
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.36
+            },
+            {
+                key: "PINK",
+                x: 0.5,
+                y: 0.52
+            }
+        ]
+    },
+    {
+        id: 40,
+        name: "Dreadnought Blimp Mid-Boss",
+        desc: "6 Arrows: Heavy Mid-Boss! Defeat Dreadnought (10 HP) and breach armored line!",
+        arrows: 6,
+        isMidBoss: true,
+        bossHp: 10,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.2,
+                y: 0.36
+            },
+            {
+                key: "BOMB",
+                x: 0.8,
+                y: 0.36
+            },
+            {
+                key: "GOLD",
+                x: 0.35,
+                y: 0.2
+            },
+            {
+                key: "GOLD",
+                x: 0.65,
+                y: 0.2
+            },
+            {
+                key: "RED",
+                x: 0.15,
+                y: 0.26
+            },
+            {
+                key: "RED",
+                x: 0.85,
+                y: 0.26
+            },
+            {
+                key: "BLUE",
+                x: 0.35,
+                y: 0.48
+            },
+            {
+                key: "BLUE",
+                x: 0.65,
+                y: 0.48
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.58
+            }
+        ]
+    },
+    {
+        id: 41,
+        name: "Ring of Fire",
+        desc: "4 Arrows: Concentric explosive ring surrounding high-value prizes!",
+        arrows: 4,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.34
+            },
+            {
+                key: "BOMB",
+                x: 0.32,
+                y: 0.24
+            },
+            {
+                key: "BOMB",
+                x: 0.68,
+                y: 0.24
+            },
+            {
+                key: "BOMB",
+                x: 0.24,
+                y: 0.38
+            },
+            {
+                key: "BOMB",
+                x: 0.76,
+                y: 0.38
+            },
+            {
+                key: "BOMB",
+                x: 0.36,
+                y: 0.48
+            },
+            {
+                key: "BOMB",
+                x: 0.64,
+                y: 0.48
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.18
+            }
+        ]
+    },
+    {
+        id: 42,
+        name: "Floating Stepping Stones",
+        desc: "4 Arrows: Ascending stair pattern across the entire battlefield!",
+        arrows: 4,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.18,
+                y: 0.58
+            },
+            {
+                key: "BLUE",
+                x: 0.32,
+                y: 0.48
+            },
+            {
+                key: "GREEN",
+                x: 0.46,
+                y: 0.38
+            },
+            {
+                key: "PINK",
+                x: 0.6,
+                y: 0.28
+            },
+            {
+                key: "GOLD",
+                x: 0.74,
+                y: 0.18
+            },
+            {
+                key: "BOMB",
+                x: 0.88,
+                y: 0.28
+            }
+        ]
+    },
+    {
+        id: 43,
+        name: "Dual Titan Vault",
+        desc: "4 Arrows: Twin defensive vaults holding triple gems and gold!",
+        arrows: 4,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.25,
+                y: 0.22
+            },
+            {
+                key: "GOLD",
+                x: 0.75,
+                y: 0.22
+            },
+            {
+                key: "RED",
+                x: 0.15,
+                y: 0.34
+            },
+            {
+                key: "RED",
+                x: 0.35,
+                y: 0.34
+            },
+            {
+                key: "BLUE",
+                x: 0.65,
+                y: 0.34
+            },
+            {
+                key: "BLUE",
+                x: 0.85,
+                y: 0.34
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.42
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.56
+            }
+        ]
+    },
+    {
+        id: 44,
+        name: "Cascade Domino Arc",
+        desc: "4 Arrows: Curved gravity trajectory dropping into a dense balloon basket!",
+        arrows: 4,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.2,
+                y: 0.48
+            },
+            {
+                key: "BLUE",
+                x: 0.32,
+                y: 0.36
+            },
+            {
+                key: "FREEZE",
+                x: 0.5,
+                y: 0.26
+            },
+            {
+                key: "BLUE",
+                x: 0.68,
+                y: 0.36
+            },
+            {
+                key: "GOLD",
+                x: 0.8,
+                y: 0.48
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.44
+            },
+            {
+                key: "PINK",
+                x: 0.38,
+                y: 0.56
+            },
+            {
+                key: "PINK",
+                x: 0.62,
+                y: 0.56
+            }
+        ]
+    },
+    {
+        id: 45,
+        name: "Stormbringer Mid-Boss",
+        desc: "6 Arrows: Fierce Mid-Boss! Defeat Stormbringer (12 HP) through the barrage!",
+        arrows: 6,
+        isMidBoss: true,
+        bossHp: 12,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.22,
+                y: 0.34
+            },
+            {
+                key: "BOMB",
+                x: 0.78,
+                y: 0.34
+            },
+            {
+                key: "FREEZE",
+                x: 0.5,
+                y: 0.18
+            },
+            {
+                key: "GOLD",
+                x: 0.35,
+                y: 0.46
+            },
+            {
+                key: "GOLD",
+                x: 0.65,
+                y: 0.46
+            },
+            {
+                key: "RED",
+                x: 0.16,
+                y: 0.24
+            },
+            {
+                key: "RED",
+                x: 0.84,
+                y: 0.24
+            },
+            {
+                key: "BLUE",
+                x: 0.2,
+                y: 0.54
+            },
+            {
+                key: "BLUE",
+                x: 0.8,
+                y: 0.54
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.62
+            }
+        ]
+    },
+    {
+        id: 46,
+        name: "Laser Corridor",
+        desc: "4 Arrows: Low-angle bank shots slicing through tight horizontal arrays!",
+        arrows: 4,
+        balloons: [
+            {
+                key: "RED",
+                x: 0.22,
+                y: 0.24
+            },
+            {
+                key: "RED",
+                x: 0.5,
+                y: 0.24
+            },
+            {
+                key: "RED",
+                x: 0.78,
+                y: 0.24
+            },
+            {
+                key: "GOLD",
+                x: 0.22,
+                y: 0.4
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.4
+            },
+            {
+                key: "GOLD",
+                x: 0.78,
+                y: 0.4
+            },
+            {
+                key: "BLUE",
+                x: 0.35,
+                y: 0.54
+            },
+            {
+                key: "BLUE",
+                x: 0.65,
+                y: 0.54
+            }
+        ]
+    },
+    {
+        id: 47,
+        name: "The Gauntlet",
+        desc: "5 Arrows: Multi-depth defense barrier testing force and range regulation!",
+        arrows: 5,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.16
+            },
+            {
+                key: "FREEZE",
+                x: 0.3,
+                y: 0.26
+            },
+            {
+                key: "FREEZE",
+                x: 0.7,
+                y: 0.26
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.34
+            },
+            {
+                key: "RED",
+                x: 0.18,
+                y: 0.38
+            },
+            {
+                key: "RED",
+                x: 0.82,
+                y: 0.38
+            },
+            {
+                key: "BLUE",
+                x: 0.34,
+                y: 0.48
+            },
+            {
+                key: "BLUE",
+                x: 0.66,
+                y: 0.48
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.58
+            }
+        ]
+    },
+    {
+        id: 48,
+        name: "Constellation Star",
+        desc: "5 Arrows: 5-pointed star formation with explosive tips and gold nucleus!",
+        arrows: 5,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.34
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.18
+            },
+            {
+                key: "RED",
+                x: 0.22,
+                y: 0.3
+            },
+            {
+                key: "RED",
+                x: 0.78,
+                y: 0.3
+            },
+            {
+                key: "BLUE",
+                x: 0.3,
+                y: 0.52
+            },
+            {
+                key: "BLUE",
+                x: 0.7,
+                y: 0.52
+            },
+            {
+                key: "GREEN",
+                x: 0.38,
+                y: 0.4
+            },
+            {
+                key: "GREEN",
+                x: 0.62,
+                y: 0.4
+            }
+        ]
+    },
+    {
+        id: 49,
+        name: "The Void Horizon",
+        desc: "5 Arrows: Distant high-altitude targets scattered across the wide stratosphere!",
+        arrows: 5,
+        balloons: [
+            {
+                key: "GOLD",
+                x: 0.16,
+                y: 0.16
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.16
+            },
+            {
+                key: "GOLD",
+                x: 0.84,
+                y: 0.16
+            },
+            {
+                key: "BOMB",
+                x: 0.33,
+                y: 0.28
+            },
+            {
+                key: "BOMB",
+                x: 0.67,
+                y: 0.28
+            },
+            {
+                key: "RED",
+                x: 0.2,
+                y: 0.42
+            },
+            {
+                key: "RED",
+                x: 0.8,
+                y: 0.42
+            },
+            {
+                key: "BLUE",
+                x: 0.5,
+                y: 0.48
+            }
+        ]
+    },
+    {
+        id: 50,
+        name: "Omega Titan Apex Sovereign",
+        desc: "7 Arrows: The Ultimate Slingshot Showdown! Defeat the 15 HP Omega Titan!",
+        arrows: 7,
+        isBoss: true,
+        bossHp: 15,
+        balloons: [
+            {
+                key: "BOMB",
+                x: 0.2,
+                y: 0.32
+            },
+            {
+                key: "BOMB",
+                x: 0.8,
+                y: 0.32
+            },
+            {
+                key: "FREEZE",
+                x: 0.35,
+                y: 0.22
+            },
+            {
+                key: "FREEZE",
+                x: 0.65,
+                y: 0.22
+            },
+            {
+                key: "GOLD",
+                x: 0.5,
+                y: 0.14
+            },
+            {
+                key: "RED",
+                x: 0.15,
+                y: 0.22
+            },
+            {
+                key: "RED",
+                x: 0.85,
+                y: 0.22
+            },
+            {
+                key: "BLUE",
+                x: 0.35,
+                y: 0.44
+            },
+            {
+                key: "BLUE",
+                x: 0.65,
+                y: 0.44
+            },
+            {
+                key: "BOMB",
+                x: 0.5,
+                y: 0.5
+            },
+            {
+                key: "PINK",
+                x: 0.2,
+                y: 0.54
+            },
+            {
+                key: "PINK",
+                x: 0.8,
+                y: 0.54
+            },
+            {
+                key: "GOLD",
+                x: 0.35,
+                y: 0.62
+            },
+            {
+                key: "GOLD",
+                x: 0.65,
+                y: 0.62
+            },
+            {
+                key: "GREEN",
+                x: 0.5,
+                y: 0.68
+            }
+        ]
     }
   ],
   SPECS: {

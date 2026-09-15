@@ -1,6 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* Compatibility shim: ensure window.fetch has both getter and setter so that
+   external harnesses, dev tools, or extensions can safely proxy or assign to it
+   without throwing 'Cannot set property fetch of #<Window> which has only a getter'. */
+(function () {
+  try {
+    var _fetch = window.fetch;
+    var boundFetch = _fetch ? function () {
+      return (_fetch || window.fetch).apply(this === window || !this ? window : this, arguments);
+    } : undefined;
+    var currentFetch = boundFetch;
+
+    var desc = {
+      get: function () {
+        return currentFetch;
+      },
+      set: function (fn) {
+        currentFetch = fn;
+      },
+      configurable: true,
+      enumerable: true
+    };
+
+    try {
+      Object.defineProperty(window, "fetch", desc);
+    } catch (e1) {}
+
+    if (typeof Window !== "undefined" && Window.prototype) {
+      try {
+        Object.defineProperty(Window.prototype, "fetch", desc);
+      } catch (e2) {}
+    }
+
+    if (typeof globalThis !== "undefined" && globalThis !== window) {
+      try {
+        Object.defineProperty(globalThis, "fetch", desc);
+      } catch (e3) {}
+    }
+  } catch (err) {}
+})();
+</script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -8,7 +49,10 @@
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" href="assets/tex/icon.svg" />
 <link rel="icon" type="image/svg+xml" href="assets/tex/icon.svg" />
-<title>Balloon Blitz — Sky Realms</title>
+<title>Balloon Blitz</title>
+<meta name="description" content="An arcade balloon popping game featuring puzzle, campaign, slingshot, and blitz modes." />
+<meta property="og:title" content="Balloon Blitz" />
+<meta property="og:description" content="An arcade balloon popping game featuring puzzle, campaign, slingshot, and blitz modes." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Fredoka:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
@@ -110,7 +154,7 @@
         <div class="hh-mico">🧩</div>
         <div class="hh-mode-content">
           <div class="hh-mtitle">PUZZLE</div>
-          <div class="hh-mmeta" id="puzzleMeta">10 Stages</div>
+          <div class="hh-mmeta" id="puzzleMeta">50 Stages</div>
         </div>
         <div class="hh-marrow">›</div>
       </div>
@@ -119,7 +163,7 @@
         <div class="hh-mico">🎯</div>
         <div class="hh-mode-content">
           <div class="hh-mtitle">CAMPAIGN</div>
-          <div class="hh-mmeta" id="campaignMeta">500 Stages</div>
+          <div class="hh-mmeta" id="campaignMeta">600 Stages</div>
         </div>
         <div class="hh-marrow">›</div>
       </div>
@@ -128,7 +172,7 @@
         <div class="hh-mico">🏹</div>
         <div class="hh-mode-content">
           <div class="hh-mtitle">SLINGSHOT</div>
-          <div class="hh-mmeta" id="slingMeta">Aim &amp; Shoot</div>
+          <div class="hh-mmeta" id="slingMeta">50 Stages</div>
         </div>
         <div class="hh-marrow">›</div>
       </div>
@@ -166,7 +210,7 @@
       <button class="map-tab" id="tabSlingshot">🏹 SLING</button>
     </div>
     <div id="campaignMapContainer">
-      <div class="campaign-progress" id="campaignProgress">Progress: 0/1500 ⭐ • 0/500 cleared</div>
+      <div class="campaign-progress" id="campaignProgress">Progress: 0/1800 ⭐ • 0/600 cleared</div>
       <!-- World Selector Bar -->
       <div class="world-nav-bar">
         <button class="world-nav-btn" id="btnPrevWorld">◀</button>
@@ -188,7 +232,7 @@
       </div>
     </div>
     <div id="puzzleMapContainer" style="display:none">
-      <div class="campaign-progress" id="puzzleProgress">Progress: 0/30 ⭐ • 0/10 cleared</div>
+      <div class="campaign-progress" id="puzzleProgress">Progress: 0/150 ⭐ • 0/50 cleared</div>
       <div class="arcade-tiles-grid" id="mPuzzlesGrid"></div>
       <!-- Selected Puzzle Mission Card -->
       <div class="stage-mission-card puzzle-card-theme" id="puzzleMissionCard">
@@ -202,7 +246,7 @@
       </div>
     </div>
     <div id="slingshotMapContainer" style="display:none">
-      <div class="campaign-progress" id="slingshotProgress">Progress: 0/75 ⭐ • 0/25 cleared</div>
+      <div class="campaign-progress" id="slingshotProgress">Progress: 0/150 ⭐ • 0/50 cleared</div>
       <div class="arcade-tiles-grid" id="mSlingshotGrid"></div>
       <!-- Selected Slingshot Mission Card -->
       <div class="stage-mission-card slingshot-card-theme" id="slingshotMissionCard">
@@ -264,7 +308,10 @@
     <div class="ach-list" id="missionsList"></div>
     <div class="section-title">🏆 Achievements</div>
     <div class="ach-list" id="achievementsList"></div>
-    <div class="mobile-actions"><button class="btn-tap" id="btnBackDashboard">⬅️ Home</button></div>
+    <div class="mobile-actions" style="margin-top:12px">
+      <button class="btn-tap" id="btnDashSettings">⚙️ Settings</button>
+      <button class="btn-tap primary" id="btnBackDashboard">⬅️ Home</button>
+    </div>
   </div>
 </div>
 
@@ -316,6 +363,7 @@
     <p style="font-size:11px;color:var(--muted);margin:6px 0 14px" id="pauseInfo"></p>
     <div class="mobile-menu-list">
       <button class="btn-tap primary" id="btnResume">▶ Resume</button>
+      <button class="btn-tap" id="btnPauseSettings" style="margin-top:8px">⚙️ Settings</button>
       <button class="btn-tap" id="btnRestartPause" style="margin-top:8px">🔄 Restart</button>
       <button class="btn-tap" id="btnQuitHome" style="margin-top:8px">🏠 Home</button>
     </div>
@@ -331,8 +379,31 @@
     <div class="set-row"><div><div class="set-label">🎵 Music</div><div class="set-sub">Soft ambient BGM</div></div><button class="toggle on" id="setMusicBtn">ON</button></div>
     <div class="set-row"><div><div class="set-label">⛶ Fullscreen</div><div class="set-sub">Immersive play</div></div><button class="toggle" id="setFullBtn">GO</button></div>
     <div class="set-row"><div><div class="set-label">❓ How To Play</div><div class="set-sub">Rules & balloon guide</div></div><button class="toggle" id="btnHowTo">VIEW</button></div>
+    <div class="set-row"><div><div class="set-label">🎵 Sound & Credits</div><div class="set-sub">Track catalog & attribution</div></div><button class="toggle" id="btnAudioCredits">VIEW</button></div>
     <div class="set-row"><div><div class="set-label">🔄 Reset Progress</div><div class="set-sub">Wipe stars & scores</div></div><button class="toggle" id="btnResetProgress">RESET</button></div>
     <div class="mobile-actions" style="margin-top:10px"><button class="btn-tap primary" id="btnCloseSettings">Done ✓</button></div>
+  </div>
+</div>
+
+<div class="overlay-view hidden" id="audioCreditsModal">
+  <div class="mobile-card" style="max-width:420px;text-align:left;max-height:85vh;overflow-y:auto">
+    <h2 style="font-size:20px;font-weight:900;margin-bottom:4px;text-align:center">🎵 SOUND & MUSIC CREDITS</h2>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px">100% Royalty-Free • CC0 1.0 Public Domain • Procedural Web Audio</p>
+    
+    <div id="audioCreditsList" style="display:flex;flex-direction:column;gap:8px;font-size:12px;line-height:1.4">
+      <!-- Generated dynamically by UI -->
+    </div>
+
+    <div style="margin-top:14px;padding:10px;background:rgba(255,255,255,0.06);border-radius:10px;font-size:11px;color:var(--muted);line-height:1.6">
+      <b>Attribution & Copyright Notice:</b><br/>
+      All musical themes and audio effects are synthetically rendered in real-time by the browser's native Web Audio API.<br/>
+      <b>Original Sound Architecture:</b> Balloon Blitz Soundworks / Open Web Audio Archive.<br/>
+      <b>License:</b> Creative Commons Zero 1.0 Universal (CC0 1.0) & MIT License. 100% safe for all portals & distributions. See <code>/CREDITS.md</code> for full catalog.
+    </div>
+
+    <div class="mobile-actions" style="margin-top:14px">
+      <button class="btn-tap primary" id="btnCloseAudioCredits">Done ✓</button>
+    </div>
   </div>
 </div>
 

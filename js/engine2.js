@@ -104,8 +104,17 @@ function triggerShake(i, du) {
 function spawnRipple(x, y, cls) { if (BB.UI) BB.UI.ripple(x, y, cls); }
 function initBalloons() {
   balloons.length = 0;
-  var c = Math.min(22, Math.max(14, Math.floor(width / 50)));
-  for (var i = 0; i < c; i++) balloons.push(new MobileBalloon(Math.random() * (height + 100)));
+  if (gameMode === "LEVELS") {
+    // Tactical Campaign: lower spawning (6 to 8 balloons), spaced out vertically for deliberate play
+    var c = Math.min(8, Math.max(6, Math.floor(width / 72)));
+    for (var i = 0; i < c; i++) {
+      var startY = (height * 0.22) + i * ((height * 0.88) / c) + Math.random() * 25;
+      balloons.push(new MobileBalloon(startY));
+    }
+  } else {
+    var c = Math.min(22, Math.max(14, Math.floor(width / 50)));
+    for (var i = 0; i < c; i++) balloons.push(new MobileBalloon(Math.random() * (height + 100)));
+  }
 }
 function resetRun() {
   score = 0; combo = 1; maxCombo = 1; comboTimer = 0; balloonsPopped = 0;
@@ -114,12 +123,14 @@ function resetRun() {
   bossBalloon = null; bossHp = 0; maxBossHp = 0;
   currentWeapon = "pistol"; weaponTimer = 0; weaponShownSec = -1;
   powerupDrops.length = 0; lasers.length = 0; shakeDuration = 0; needleRays.length = 0;
+  if (campaignDepletedTimer) { clearTimeout(campaignDepletedTimer); campaignDepletedTimer = null; }
   document.body.classList.remove("fever-active");
   document.getElementById("mFeverBar").style.width = "0%";
   document.getElementById("mFeverPct").innerText = "0%";
 }
 function startBlitz() {
-  sound().init(); BB.Music.playMode("BLITZ");
+  sound().init();
+  try { BB.Music.play("blitz"); } catch (e) {}
   BB.Ads.notifyRunStart(); lockInput();
   gameMode = "BLITZ"; gameState = "PLAYING"; resetRun(); timeLeft = 60;
   BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
@@ -129,31 +140,45 @@ function startBlitz() {
 function initSlingshotStage(id) {
   balloons.length = 0;
   slingshotDarts.length = 0;
+  bossBalloon = null;
   var stg = (BB.Content.SLING_STAGES && BB.Content.SLING_STAGES[id - 1]) || BB.Content.SLING_STAGES[0];
   slingshotArrowsLeft = stg.arrows;
+  if (stg.bossHp) {
+    bossHp = stg.bossHp;
+    maxBossHp = stg.bossHp;
+    bossBalloon = new BossBalloon(bossHp, stg.isMidBoss);
+  }
   stg.balloons.forEach(function (b) {
     var nb = new MobileBalloon(null, true, b.key, b.x, b.y);
     nb.isSling = true;
     balloons.push(nb);
   });
-  slingshotTotalBalloons = balloons.length;
-  slingshotActiveBalloons = balloons.length;
+  slingshotTotalBalloons = balloons.length + (stg.bossHp ? 1 : 0);
+  slingshotActiveBalloons = balloons.length + (stg.bossHp ? 1 : 0);
 }
 function startSlingshot(stageId) {
   sound().init();
-  try { BB.Music.play("blitz"); } catch (e) {}
-  BB.Ads.notifyRunStart(); lockInput();
   currentSlingshotStage = stageId || 1;
+  var stg = BB.Content.SLING_STAGES[currentSlingshotStage - 1] || BB.Content.SLING_STAGES[0];
+  try {
+    if (stg.isBoss) BB.Music.play("boss");
+    else if (stg.isMidBoss) BB.Music.play("midboss");
+    else BB.Music.play("slingshot");
+  } catch (e) {}
+  BB.Ads.notifyRunStart(); lockInput();
   gameMode = "SLING"; gameState = "PLAYING"; resetRun();
   initSlingshotStage(currentSlingshotStage);
   slingshotState.dragging = false;
   BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
   updateHud(); BB.UI.show(null);
-  var stg = BB.Content.SLING_STAGES[currentSlingshotStage - 1];
-  BB.UI.announce("🏹 STAGE " + currentSlingshotStage + ": " + stg.name.toUpperCase(), stg.desc, "#f97316");
+  var sTitle = stg.isBoss ? "👑 TITAN BOSS STAGE " + currentSlingshotStage :
+    (stg.isMidBoss ? "💀 MID-BOSS STAGE " + currentSlingshotStage : "🏹 STAGE " + currentSlingshotStage);
+  var sColor = stg.isBoss ? "#ffd000" : (stg.isMidBoss ? "#ff5e7a" : "#f97316");
+  BB.UI.announce(sTitle, stg.name.toUpperCase() + (stg.desc ? " — " + stg.desc : ""), sColor);
 }
 function startInfinite() {
-  sound().init(); BB.Music.playMode("survival");
+  sound().init();
+  try { BB.Music.play("survival"); } catch (e) {}
   BB.Ads.notifyRunStart(); lockInput();
   gameMode = "INFINITE"; gameState = "PLAYING"; resetRun(); lives = 3; wave = 1;
   BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
@@ -161,19 +186,39 @@ function startInfinite() {
   BB.UI.announce("♾️ SURVIVE!", "Protect 3 lives", "#a29bfe");
 }
 function startLevel(id) {
-  sound().init(); BB.Music.playMode("LEVELS");
-  BB.Ads.notifyRunStart(); lockInput(); currentLevelId = id;
+  sound().init();
+  currentLevelId = id;
   var l = BB.Content.LEVELS[id - 1] || BB.Content.LEVELS[0];
+  try {
+    if (l.isBoss) BB.Music.play("boss");
+    else if (l.isMidBoss) BB.Music.play("midboss");
+    else BB.Music.play("campaign");
+  } catch (e) {}
+  BB.Ads.notifyRunStart(); lockInput();
   gameMode = "LEVELS"; gameState = "PLAYING"; resetRun();
-  timeLeft = l.time; levelProgressCount = 0;
-  if (l.isBoss) {
+  campaignMoves = l.moves || 18;
+  campaignMovesLeft = campaignMoves;
+  campaignHazardsHit = 0;
+  campaignSequenceIdx = 0;
+  levelProgressCount = 0;
+  timeLeft = campaignMoves;
+  if (l.isEscort) {
+    escortBalloon = new EscortBalloon();
+  } else {
+    escortBalloon = null;
+  }
+  if (l.isBoss || l.isMidBoss) {
     bossHp = l.target;
     maxBossHp = l.target;
-    bossBalloon = new BossBalloon(bossHp);
+    bossBalloon = new BossBalloon(bossHp, l.isMidBoss);
+  } else {
+    bossBalloon = null;
   }
   BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
   initBalloons(); updateHud(); BB.UI.show(null);
-  BB.UI.announce(l.isBoss ? "👑 BOSS STAGE " + id : "STAGE " + id, l.desc.toUpperCase(), l.isBoss ? "#ffd000" : "#00f5d4");
+  var aTitle = l.isBoss ? "👑 " + (l.worldName || "WORLD").toUpperCase() + " BOSS" : (l.isMidBoss ? "💀 MID-BOSS STG " + id : "STG " + id + " • " + (l.worldName || "WORLD").toUpperCase());
+  var aColor = l.isBoss ? "#ffd000" : (l.isMidBoss ? "#ff5e7a" : "#00f5d4");
+  BB.UI.announce(aTitle, l.desc.toUpperCase() + " (" + campaignMoves + " MOVES)", aColor);
 }
 function initPuzzle(id) {
   balloons.length = 0;
@@ -189,13 +234,21 @@ function initPuzzle(id) {
 }
 function startPuzzle(id) {
   sound().init();
-  try { BB.Music.play("campaign"); } catch (e) {}
-  BB.Ads.notifyRunStart(); lockInput(); currentPuzzleId = id;
+  currentPuzzleId = id;
+  var pz = BB.Content.PUZZLES[id - 1] || BB.Content.PUZZLES[0];
+  try {
+    if (pz.isBoss) BB.Music.play("boss");
+    else if (pz.isMidBoss) BB.Music.play("midboss");
+    else BB.Music.play("puzzle");
+  } catch (e) {}
+  BB.Ads.notifyRunStart(); lockInput();
   gameMode = "PUZZLE"; gameState = "PLAYING"; resetRun();
   BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
   initPuzzle(id); updateHud(); BB.UI.show(null);
-  var pz = BB.Content.PUZZLES[id - 1];
-  BB.UI.announce("🧩 PUZZLE " + id + ": " + pz.name.toUpperCase(), pz.desc, "#00f5d4");
+  var pTitle = pz.isBoss ? "👑 APEX BOSS PUZZLE " + id :
+    (pz.isMidBoss ? "💀 MID-BOSS PUZZLE " + id : "🧩 PUZZLE " + id);
+  var pColor = pz.isBoss ? "#ffd000" : (pz.isMidBoss ? "#ff5e7a" : "#00f5d4");
+  BB.UI.announce(pTitle, pz.name.toUpperCase() + (pz.desc ? " — " + pz.desc : ""), pColor);
 }
 function loseLife() {
   if (gameState !== "PLAYING" || gameMode !== "INFINITE") return;
@@ -214,7 +267,9 @@ function addFever(amt) {
     isFever = true; feverTimer = 7.0; feversThisRun++;
     BB.Save.data.fevers = (BB.Save.data.fevers || 0) + 1;
     document.body.classList.add("fever-active");
-    sound().victory(); BB.UI.flash(0.4); triggerShake(8, 0.35);
+    try { sound().fever(); } catch (e) { sound().victory(); }
+    try { BB.Music.setFever(true); } catch (e) {}
+    BB.UI.flash(0.4); triggerShake(8, 0.35);
     document.getElementById("mFeverLabel").innerText = "🔥 FEVER x2!";
     BB.UI.announce("🔥 FEVER MODE!", "2X SCORE — 7s", "#ffd700");
     textPopups.push(new MobileTextPopup("FEVER MODE!! 🔥", width / 2, height / 2, "#ffd700", true));
@@ -228,6 +283,7 @@ function addFever(amt) {
 }
 function endFever() {
   isFever = false; feverCharge = 0;
+  try { BB.Music.setFever(false); } catch (e) {}
   document.body.classList.remove("fever-active");
   document.getElementById("mFeverBar").style.width = "0%";
   document.getElementById("mFeverPct").innerText = "0%";
@@ -351,12 +407,17 @@ function popBalloon(b, isChain, chainDepth) {
     if (gameMode === "LEVELS" && BB.Content.LEVELS[currentLevelId - 1].type === "freeze") {
       levelProgressCount++; checkLevelWin();
     }
-  } else if (b.spec.isGift) { grantAbility(b);
+  } else if (b.spec.isGift) {
+    try { sound().powerup(); } catch (e) {}
+    grantAbility(b);
   } else {
-    sound().pop(combo);
     if (b.spec.isGold) {
+      try { sound().gold(); } catch (e) { sound().pop(combo, "GOLD"); }
       burst(bx, by, "#ffd23f", 16, true); burst(bx, by, "#fff6c9", 8); shockwaves.push(new MobileShockwave(bx, by, 64, "#ffd23f")); triggerShake(5, 0.18); spawnRipple(bx, by, "gold"); earnCoins(5);
-    } else { burst(bx, by, (BB.Economy.skinColors() || {})[b.spec.key] || b.spec.color, 12); spawnRipple(bx, by, ""); earnCoins(1); }
+    } else {
+      sound().pop(combo, b.spec.key);
+      burst(bx, by, (BB.Economy.skinColors() || {})[b.spec.key] || b.spec.color, 12); spawnRipple(bx, by, ""); earnCoins(1);
+    }
     var pts = (b.spec.points || 10) * combo * (isFever ? 2 : 1);
     score += pts; combo++;
     if (combo > maxCombo) maxCombo = combo;
@@ -366,11 +427,38 @@ function popBalloon(b, isChain, chainDepth) {
     if (combo === 8 || combo === 12 || combo === 20) BB.UI.announce("⚡ COMBO x" + combo, "Keep popping!", "#00f5d4");
     if (gameMode === "LEVELS") {
       var cur = BB.Content.LEVELS[currentLevelId - 1];
-      if (!cur.type) levelProgressCount++;
-      else if (cur.type === "gold" && b.spec.isGold) levelProgressCount++;
-      else if (cur.type === "combo") levelProgressCount = Math.max(levelProgressCount, combo);
-      else if (cur.type === "score") levelProgressCount = score;
-      checkLevelWin();
+      if (cur) {
+        if (cur.type === "color") {
+          if (b.spec.key === cur.targetColor) {
+            levelProgressCount++;
+            textPopups.push(new MobileTextPopup("+1 🎯 (" + levelProgressCount + "/" + cur.target + ")", bx, by - 22, "#00f5d4", true));
+          } else {
+            textPopups.push(new MobileTextPopup("Need " + cur.targetColor + "!", bx, by - 22, "#aaaaaa"));
+          }
+        } else if (cur.type === "sequence") {
+          var expectedKey = cur.sequence[campaignSequenceIdx % cur.sequence.length];
+          if (b.spec.key === expectedKey) {
+            campaignSequenceIdx++;
+            levelProgressCount++;
+            try { sound().gold(); } catch (e) {}
+            textPopups.push(new MobileTextPopup("✓ " + expectedKey + " (" + levelProgressCount + "/" + cur.target + ")", bx, by - 22, "#ffd700", true));
+          } else {
+            textPopups.push(new MobileTextPopup("Wrong! Need " + expectedKey, bx, by - 22, "#ff5e7a"));
+          }
+        } else if (cur.type === "gold") {
+          if (b.spec.isGold) {
+            levelProgressCount++;
+            textPopups.push(new MobileTextPopup("⭐ GOLD! (" + levelProgressCount + "/" + cur.target + ")", bx, by - 22, "#ffd700", true));
+          }
+        } else if (cur.type === "combo") {
+          levelProgressCount = Math.max(levelProgressCount, combo);
+        } else if (cur.type === "score") {
+          levelProgressCount = score;
+        } else if (cur.type === "pop") {
+          levelProgressCount++;
+        }
+        checkLevelWin();
+      }
     }
   }
   if (gameMode === "INFINITE" && balloonsPopped % 20 === 0) {
@@ -384,7 +472,14 @@ function popBalloon(b, isChain, chainDepth) {
   var fr = BB.Achievements.check();
   if (fr.length) BB.UI.announce("🏆 " + fr[0].name.toUpperCase(), "Achievement unlocked", "#ffd23f");
   BB.Save.save();
-  if (!b.isPuzzle && !b.isSling) setTimeout(function () { b.reset(null); }, 400);
+  if (!b.isPuzzle && !b.isSling) {
+    var respawnDelay = (gameMode === "LEVELS") ? 1300 : 400;
+    setTimeout(function () {
+      if (gameState === "PLAYING" && !b.isPuzzle && !b.isSling) {
+        b.reset(null);
+      }
+    }, respawnDelay);
+  }
   if (gameMode === "SLING") {
     setTimeout(function () {
       if (gameState === "PLAYING" && gameMode === "SLING") {
@@ -417,6 +512,7 @@ function checkPuzzleStatus() {
 function winPuzzle() {
   gameState = "LEVEL_COMPLETE";
   sound().victory(); endFever();
+  clearField();
   var pz = BB.Content.PUZZLES[currentPuzzleId - 1];
   var stars = (pz.darts === 1) ? 3 : (puzzleDartsLeft >= 1 ? 3 : 2);
   var pp = BB.Save.data.puzzleProgress;
@@ -447,6 +543,7 @@ function failPuzzle() {
   gameState = "GAMEOVER";
   sound().lifeLost(); endFever();
   var unpopped = balloons.filter(function (o) { return !o.popped; }).length;
+  clearField();
   BB.UI.showGameOver({
     isPuzzle: true,
     puzzleId: currentPuzzleId,
@@ -463,6 +560,7 @@ function winSlingshotStage() {
   if (gameState !== "PLAYING" || gameMode !== "SLING") return;
   gameState = "LEVEL_COMPLETE";
   sound().victory(); endFever();
+  clearField();
   var stg = BB.Content.SLING_STAGES[currentSlingshotStage - 1] || BB.Content.SLING_STAGES[0];
   var stars = slingshotArrowsLeft >= 1 ? 3 : 2;
   var sp = BB.Save.data.slingshotProgress;
@@ -494,6 +592,7 @@ function failSlingshotStage() {
   gameState = "GAMEOVER";
   sound().lifeLost(); endFever();
   var unpopped = balloons.filter(function (o) { return !o.popped; }).length;
+  clearField();
   BB.UI.showGameOver({
     isSlingshot: true,
     slingshotId: currentSlingshotStage,
@@ -506,29 +605,95 @@ function failSlingshotStage() {
     unpopped: unpopped
   });
 }
+function failCampaignStage(reason) {
+  if (gameState !== "PLAYING" || gameMode !== "LEVELS") return;
+  gameState = "GAMEOVER";
+  sound().lifeLost(); endFever();
+  var l = BB.Content.LEVELS[currentLevelId - 1] || BB.Content.LEVELS[0];
+  clearField();
+  BB.UI.showGameOver({
+    isCampaign: true,
+    failReason: reason || "OUT OF MOVES! 🎯",
+    levelId: currentLevelId,
+    world: l.world || 1,
+    levelDesc: l.desc,
+    progress: levelProgressCount,
+    target: l.target,
+    score: score,
+    pops: balloonsPopped,
+    combo: maxCombo,
+    coins: Math.max(5, balloonsPopped),
+    xp: balloonsPopped * 2
+  });
+}
+var campaignDepletedTimer = null;
+function checkCampaignMoveDepleted() {
+  if (gameState !== "PLAYING" || gameMode !== "LEVELS") return;
+  if (campaignMovesLeft <= 0) {
+    if (campaignDepletedTimer) return;
+    campaignDepletedTimer = setTimeout(function () {
+      campaignDepletedTimer = null;
+      if (gameState === "PLAYING" && gameMode === "LEVELS") {
+        if (!checkLevelWin()) {
+          failCampaignStage("OUT OF MOVES! 🎯");
+        }
+      }
+    }, 450);
+  }
+}
 function checkLevelWin() {
+  if (gameState !== "PLAYING" || gameMode !== "LEVELS") return false;
   var cur = BB.Content.LEVELS[currentLevelId - 1];
-  if (levelProgressCount >= cur.target) {
+  if (!cur) return false;
+  var won = false;
+
+  if (cur.isEscort) {
+    if (escortBalloon && escortBalloon.y <= 95 && escortBalloon.hp > 0) {
+      won = true;
+    }
+  } else if (cur.isBoss || cur.isMidBoss) {
+    if (bossHp <= 0 || (bossBalloon && bossBalloon.popped)) {
+      won = true;
+    }
+  } else {
+    if (levelProgressCount >= cur.target) won = true;
+  }
+
+  if (won) {
     gameState = "LEVEL_COMPLETE"; sound().victory(); endFever();
-    var stars = timeLeft >= 12 ? 3 : (timeLeft >= 5 ? 2 : 1);
+    clearField();
+    var movesRemaining = Math.max(0, campaignMovesLeft);
+    var starThreshold = Math.max(2, Math.ceil((cur.moves || 15) * 0.25));
+    var stars = (movesRemaining >= starThreshold && campaignHazardsHit === 0) ? 3 : (movesRemaining >= 1 ? 2 : 1);
     var lp = BB.Save.data.levelsProgress;
     if (!lp[currentLevelId]) lp[currentLevelId] = { unlocked: true, stars: 0 };
     lp[currentLevelId].stars = Math.max(lp[currentLevelId].stars, stars);
-    if (currentLevelId < (BB.Content.MAX_LEVELS || 500)) {
+    if (currentLevelId < (BB.Content.MAX_LEVELS || 600)) {
       if (!lp[currentLevelId + 1]) lp[currentLevelId + 1] = { unlocked: true, stars: 0 };
       else lp[currentLevelId + 1].unlocked = true;
     }
-    var bonus = 50 + stars * 25;
+    var bonus = 50 + stars * 25 + movesRemaining * 10;
     BB.Economy.addGems(stars >= 3 ? 1 : 0);
     BB.Economy.addCoins(bonus);
     var rec = BB.Player.recordGame("LEVELS", { score: score, pops: balloonsPopped, combo: maxCombo, wave: 0 });
     BB.Rewards.track("score", score);
     BB.Save.save(); BB.Achievements.check();
-    BB.UI.showLevelComplete({ stars: stars, score: score, time: Math.ceil(timeLeft), coins: bonus + rec.coins, xp: rec.xp, levelUp: rec.levelUp });
+    BB.UI.showLevelComplete({
+      isCampaign: true,
+      stars: stars,
+      score: score,
+      time: movesRemaining,
+      coins: bonus + rec.coins,
+      xp: rec.xp,
+      levelUp: rec.levelUp
+    });
+    return true;
   }
+  return false;
 }
 function endGame() {
   gameState = "GAMEOVER"; endFever();
+  clearField();
   var before = Math.max(BB.Save.data.blitzHighScore || 0, BB.Save.data.infiniteHighScore || 0);
   var rec = BB.Player.recordGame(gameMode, { score: score, pops: balloonsPopped, combo: maxCombo, wave: wave });
   BB.Economy.addCoins(rec.coins);
@@ -564,37 +729,56 @@ function updateHud() {
     document.getElementById("mTargetVal").innerText = h || "💀";
   } else if (gameMode === "LEVELS") {
     var l = BB.Content.LEVELS[currentLevelId - 1];
-    document.getElementById("hudModeVal").innerText = (l && l.isBoss ? "👑 BOSS " : "STG ") + currentLevelId;
-    document.getElementById("mTargetLbl").innerText = "TIME";
-    document.getElementById("mTargetVal").innerText = Math.ceil(timeLeft);
+    document.getElementById("hudModeVal").innerText = (l && l.isBoss ? "👑 BOSS " : (l && l.isMidBoss ? "💀 MID " : "STG ")) + currentLevelId;
+    document.getElementById("mTargetLbl").innerText = "MOVES";
+    document.getElementById("mTargetVal").innerText = "🎯 " + campaignMovesLeft;
     var banner = document.getElementById("mobileObjBanner");
     if (banner && l) {
       banner.style.display = "block";
-      if (l.isBoss) {
-        banner.innerText = "👑 BOSS BATTLE: " + (bossHp || 0) + "/" + (maxBossHp || 0) + " HP (" + Math.ceil(timeLeft) + "s)";
+      if (l.isEscort) {
+        var ePct = escortBalloon ? Math.min(100, Math.max(0, Math.floor(((height - 70 - escortBalloon.y) / (height - 160)) * 100))) : 0;
+        var hpTxt = escortBalloon ? "❤️".repeat(Math.max(0, escortBalloon.hp)) : "❤️";
+        banner.innerText = "🎈 ESCORT TRAVELER: " + ePct + "% (" + hpTxt + ") • " + campaignMovesLeft + " Moves Left";
+      } else if (l.isBoss) {
+        banner.innerText = "👑 BOSS: " + (bossHp || 0) + "/" + (maxBossHp || 0) + " HP • " + campaignMovesLeft + " Moves Left";
+      } else if (l.isMidBoss) {
+        banner.innerText = "💀 MID-BOSS: " + (bossHp || 0) + "/" + (maxBossHp || 0) + " HP • " + campaignMovesLeft + " Moves Left";
+      } else if (l.type === "sequence") {
+        var exp = l.sequence[campaignSequenceIdx % l.sequence.length];
+        var seqMap = { RED: "🔴 RED", BLUE: "🔵 BLUE", GREEN: "🍏 GREEN", PINK: "🌸 PINK", GOLD: "⭐ GOLD" };
+        banner.innerText = "🌈 NEXT: " + (seqMap[exp] || exp) + " (Step " + levelProgressCount + "/" + l.target + ") • " + campaignMovesLeft + " Moves";
+      } else if (l.type === "color") {
+        var cMap = { BLUE: "🔵 BLUE", RED: "🔴 RED", GREEN: "🍏 GREEN", PINK: "🌸 PINK", GOLD: "⭐ GOLD" };
+        banner.innerText = "🎯 HARVEST: " + (cMap[l.targetColor] || l.targetColor) + " (" + levelProgressCount + "/" + l.target + ") • " + campaignMovesLeft + " Moves";
       } else {
-        banner.innerText = "LVL " + currentLevelId + ": " + l.desc + " (" + levelProgressCount + "/" + l.target + ")";
+        banner.innerText = "🎯 " + l.desc + " (" + levelProgressCount + "/" + l.target + ") • " + campaignMovesLeft + " Moves";
       }
     }
   } else if (gameMode === "PUZZLE") {
     var pz = (BB.Content.PUZZLES && BB.Content.PUZZLES[currentPuzzleId - 1]) || { name: "Puzzle", darts: 1 };
-    document.getElementById("hudModeVal").innerText = "PUZZLE " + currentPuzzleId;
+    document.getElementById("hudModeVal").innerText = (pz && pz.isBoss ? "👑 " : (pz && pz.isMidBoss ? "💀 " : "")) + "PUZZLE " + currentPuzzleId;
     document.getElementById("mTargetLbl").innerText = "DARTS";
     document.getElementById("mTargetVal").innerText = "🎯 " + puzzleDartsLeft;
     var banner = document.getElementById("mobileObjBanner");
     if (banner) {
       banner.style.display = "block";
-      banner.innerText = "🧩 PUZZLE " + currentPuzzleId + ": " + pz.name + " (" + puzzleActiveBalloons + " left)";
+      var pfx = (pz && pz.isBoss) ? "👑 BOSS " : ((pz && pz.isMidBoss) ? "💀 MID-BOSS " : "🧩 ");
+      banner.innerText = pfx + "PUZZLE " + currentPuzzleId + ": " + pz.name + " (" + puzzleActiveBalloons + " left)";
     }
   } else if (gameMode === "SLING") {
     var stg = (BB.Content.SLING_STAGES && BB.Content.SLING_STAGES[currentSlingshotStage - 1]) || { name: "Slingshot", arrows: 2 };
-    document.getElementById("hudModeVal").innerText = "SLING " + currentSlingshotStage;
+    document.getElementById("hudModeVal").innerText = (stg && stg.isBoss ? "👑 " : (stg && stg.isMidBoss ? "💀 " : "")) + "SLING " + currentSlingshotStage;
     document.getElementById("mTargetLbl").innerText = "ARROWS";
     document.getElementById("mTargetVal").innerText = "🏹 " + slingshotArrowsLeft;
     var banner = document.getElementById("mobileObjBanner");
     if (banner) {
       banner.style.display = "block";
-      banner.innerText = "🏹 STAGE " + currentSlingshotStage + ": " + stg.name + " (" + slingshotActiveBalloons + " left)";
+      if (stg.bossHp && bossBalloon && !bossBalloon.popped) {
+        banner.innerText = (stg.isBoss ? "👑 BOSS " : "💀 MID-BOSS ") + stg.name + ": " + bossHp + "/" + maxBossHp + " HP (" + slingshotActiveBalloons + " targets left)";
+      } else {
+        var spfx = (stg && stg.isBoss) ? "👑 BOSS " : ((stg && stg.isMidBoss) ? "💀 MID-BOSS " : "🏹 ");
+        banner.innerText = spfx + "STAGE " + currentSlingshotStage + ": " + stg.name + " (" + slingshotActiveBalloons + " left)";
+      }
     }
   }
   updateWeaponBadge();
@@ -623,22 +807,29 @@ function fireAt(px, py) {
     return;
   }
 
+  if (gameMode === "LEVELS") {
+    if (campaignMovesLeft <= 0) return;
+    campaignMovesLeft--;
+  }
+
   if (bossBalloon && !bossBalloon.popped && bossBalloon.containsPoint(px, py)) {
     bossBalloon.hp--;
     bossHp = bossBalloon.hp;
     triggerShake(7, 0.16);
-    sound().laser();
-    burst(px, py, "#ffd000", 14);
-    textPopups.push(new MobileTextPopup("-1 HP! 👑", px, py - 20, "#ff4444"));
+    try { sound().bossHit(bossBalloon.hp, maxBossHp, bossBalloon.isMidBoss); } catch (e) { sound().laser(); }
+    burst(px, py, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd000", 14);
+    textPopups.push(new MobileTextPopup("-1 HP! " + (bossBalloon.isMidBoss ? "💀" : "👑"), px, py - 20, "#ff4444"));
     levelProgressCount++;
     if (bossBalloon.hp <= 0) {
       bossBalloon.popped = true;
-      burst(bossBalloon.x, bossBalloon.y, "#ffd700", 45, true);
-      shockwaves.push(new MobileShockwave(bossBalloon.x, bossBalloon.y, 250, "#ffd700"));
-      sound().victory();
+      burst(bossBalloon.x, bossBalloon.y, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd700", 45, true);
+      shockwaves.push(new MobileShockwave(bossBalloon.x, bossBalloon.y, 250, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd700"));
+      try { sound().bossDefeat(bossBalloon.isMidBoss); } catch (e) { sound().victory(); }
       setTimeout(checkLevelWin, 350);
     }
     updateHud();
+    if (checkLevelWin()) return;
+    if (gameMode === "LEVELS" && campaignMovesLeft <= 0) checkCampaignMoveDepleted();
     return;
   }
 
@@ -653,6 +844,10 @@ function fireAt(px, py) {
     balloons.forEach(function (bl) {
       if (!bl.popped && Math.abs(bl.drawX - px) < bl.radius + 18) popBalloon(bl);
     });
+    if (gameMode === "LEVELS") {
+      updateHud();
+      if (!checkLevelWin() && campaignMovesLeft <= 0) checkCampaignMoveDepleted();
+    }
     return;
   }
   if (currentWeapon === "shotgun") {
@@ -664,6 +859,10 @@ function fireAt(px, py) {
       }
     });
     if (!hitS && combo > 1) { combo = 1; updateHud(); }
+    if (gameMode === "LEVELS") {
+      updateHud();
+      if (!checkLevelWin() && campaignMovesLeft <= 0) checkCampaignMoveDepleted();
+    }
     return;
   }
   var hit = false, best = null;
@@ -676,10 +875,21 @@ function fireAt(px, py) {
         triggerShake(12, 0.35); BB.UI.flash(0.2);
         sound().bomb();
         burst(px, py, "#ff2a5f", 20, true);
-        textPopups.push(new MobileTextPopup("OUCH! 🦔 -200", px, py - 20, "#ff2a5f", true));
+        if (gameMode === "LEVELS") {
+          campaignHazardsHit++;
+          campaignMovesLeft = Math.max(0, campaignMovesLeft - 1);
+          textPopups.push(new MobileTextPopup("SPIKE HAZARD! -1 MOVE 🦔", px, py - 20, "#ff2a5f", true));
+        } else {
+          textPopups.push(new MobileTextPopup("OUCH! 🦔 -200", px, py - 20, "#ff2a5f", true));
+        }
         b.popped = true;
-        setTimeout(function () { b.reset(null); }, 400);
+        var hDelay = (gameMode === "LEVELS") ? 1500 : 400;
+        setTimeout(function () {
+          if (gameState === "PLAYING") b.reset(null);
+        }, hDelay);
         updateHud();
+        if (checkLevelWin()) return;
+        if (gameMode === "LEVELS" && campaignMovesLeft <= 0) checkCampaignMoveDepleted();
         return;
       }
       if (b.shield > 0) {
@@ -694,6 +904,7 @@ function fireAt(px, py) {
           checkLevelWin();
         }
         updateHud();
+        if (gameMode === "LEVELS" && campaignMovesLeft <= 0) checkCampaignMoveDepleted();
         return;
       }
       popBalloon(b); hit = true; best = b; break;
@@ -710,6 +921,13 @@ function fireAt(px, py) {
     }
   }
   if (!hit && combo > 1) { combo = 1; updateHud(); }
+  if (gameState !== "PLAYING") return;
+  if (gameMode === "LEVELS") {
+    updateHud();
+    if (!checkLevelWin() && campaignMovesLeft <= 0) {
+      checkCampaignMoveDepleted();
+    }
+  }
 }
 
 /* ------------------------------------------------------------ ROUND GATE
@@ -719,19 +937,19 @@ function fireAt(px, py) {
    pops resolve. Everything else (HOME, or any state a menu introduces) is
    idle: the field is dropped once and the loop coasts. */
 function inRound() {
-  return gameState === "PLAYING" || gameState === "PAUSED" ||
-    gameState === "LEVEL_COMPLETE" || gameState === "GAMEOVER";
+  return gameState === "PLAYING" || gameState === "PAUSED";
 }
 function fieldIsEmpty() {
   return !balloons.length && !particles.length && !textPopups.length &&
     !shockwaves.length && !needleRays.length && !powerupDrops.length &&
-    !lasers.length && !slingshotDarts.length && !bossBalloon;
+    !lasers.length && !slingshotDarts.length && !bossBalloon && !escortBalloon;
 }
 function clearField() {
   balloons.length = 0; particles.length = 0; textPopups.length = 0;
   shockwaves.length = 0; needleRays.length = 0; powerupDrops.length = 0;
   lasers.length = 0; slingshotDarts.length = 0;
   bossBalloon = null;
+  escortBalloon = null;
   shakeDuration = 0; shakeIntensity = 0; slowMoTimer = 0;
   if (isFever || feverCharge) endFever();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -805,12 +1023,18 @@ function loop(curT) {
     drawSlingshot();
   }
   if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0 && combo > 1) { combo = 1; updateHud(); } }
-  if (gameState === "PLAYING" && (gameMode === "BLITZ" || gameMode === "LEVELS")) {
+  if (gameState === "PLAYING" && gameMode === "LEVELS" && escortBalloon) {
+    escortBalloon.update(dt);
+    escortBalloon.draw();
+    if (escortBalloon.y <= 95 && escortBalloon.hp > 0) {
+      checkLevelWin();
+    }
+  }
+  if (gameState === "PLAYING" && gameMode === "BLITZ") {
     timeLeft -= dt;
     if (timeLeft <= 0) {
       timeLeft = 0; updateHud();
-      if (gameMode === "LEVELS" && levelProgressCount >= BB.Content.LEVELS[currentLevelId - 1].target) checkLevelWin();
-      else endGame();
+      endGame();
     } else updateHud();
   }
   requestAnimationFrame(loop);
@@ -904,6 +1128,14 @@ BB.Engine = {
   },
   startPuzzle: startPuzzle,
   startSlingshot: startSlingshot,
+  startLevel: startLevel,
+  startBlitz: startBlitz,
+  startInfinite: startInfinite,
+  clear: clearField,
+  stop: function () {
+    gameState = "HOME";
+    clearField();
+  },
   resetSlingshot: function () { if (gameMode === "SLING") startSlingshot(currentSlingshotStage); },
   resetPuzzle: function () {
     if (gameMode === "PUZZLE") startPuzzle(currentPuzzleId);

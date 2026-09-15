@@ -12,6 +12,7 @@ var mousePos = { x: 0, y: 0 };
 var balloons = [], particles = [], textPopups = [], shockwaves = [], lasers = [], powerupDrops = [], needleRays = [];
 var currentWeapon = "pistol", weaponTimer = 0, weaponShownSec = -1;
 var bossBalloon = null, bossHp = 0, maxBossHp = 0;
+var campaignMoves = 0, campaignMovesLeft = 0, campaignHazardsHit = 0, campaignSequenceIdx = 0, campaignWind = 0, escortBalloon = null;
 var slingshotDarts = [], slingshotArrowsLeft = 5, slingshotTotalPops = 0, slingshotState = { dragging: false, curX: 0, curY: 0 };
 var currentSlingshotStage = 1, slingshotTotalBalloons = 0, slingshotActiveBalloons = 0;
 function sound() { return BB.Audio.sound; }
@@ -290,22 +291,42 @@ class MobileBalloon {
     if (this.isPuzzle) return;
     var SPECS = BB.Content.SPECS, r = Math.random(), c = 0, sel = SPECS.RED;
     for (var k in SPECS) { c += SPECS[k].prob; if (r <= c) { sel = SPECS[k]; break; } }
-    this.spec = sel; this.radius = sel.r;
+    var curLvl = (gameMode === "LEVELS") ? BB.Content.LEVELS[currentLevelId - 1] : null;
+    if (curLvl && curLvl.targetColor && Math.random() < 0.45) {
+      sel = SPECS[curLvl.targetColor] || sel;
+    } else if (curLvl && curLvl.type === "sequence" && curLvl.sequence && Math.random() < 0.60) {
+      var seqPick = curLvl.sequence[Math.floor(Math.random() * curLvl.sequence.length)];
+      sel = SPECS[seqPick] || sel;
+    }
+    this.spec = sel;
+    this.radius = sel.r;
     this.x = this.radius + 25 + Math.random() * Math.max(10, width - (this.radius + 25) * 2);
     this.drawX = this.x;
-    this.y = (y !== null && y !== undefined) ? y : (height + this.radius + 20 + Math.random() * 80);
+    if (y !== null && y !== undefined) {
+      this.y = y;
+    } else {
+      // In Campaign mode, stagger spawning further below screen for gentle, low-density entry
+      var extraY = (gameMode === "LEVELS") ? (60 + Math.random() * 200) : (Math.random() * 80);
+      this.y = height + this.radius + 20 + extraY;
+    }
     var bonus = (gameMode === "INFINITE") ? (wave - 1) * 0.35 : 0;
-    var curLvl = (gameMode === "LEVELS") ? BB.Content.LEVELS[currentLevelId - 1] : null;
     var spdMult = (curLvl && curLvl.speedMult) || 1.0;
-    this.speed = (sel.speed + Math.random() * 0.6 + bonus) * spdMult;
-    this.wobble = Math.random() * 100; this.popped = false; this.spawnScale = 0;
+    if (gameMode === "LEVELS") {
+      // Gentle, slow tactical cruising speed (approx 45% of arcade rush)
+      this.speed = (sel.speed * 0.44 + Math.random() * 0.20) * Math.min(1.15, spdMult);
+    } else {
+      this.speed = (sel.speed + Math.random() * 0.6 + bonus) * spdMult;
+    }
+    this.wobble = Math.random() * 100;
+    this.popped = false;
+    this.spawnScale = 0;
 
     this.shield = 0;
     this.isHazard = false;
     if (curLvl && !sel.isBomb && !sel.isGift && !sel.isFreeze) {
-      if (curLvl.hasShields && Math.random() < 0.22) {
+      if (curLvl.hasShields && Math.random() < 0.25) {
         this.shield = 1;
-      } else if (curLvl.hasHazards && Math.random() < 0.12) {
+      } else if (curLvl.hasHazards && Math.random() < 0.16) {
         this.isHazard = true;
       }
     }
@@ -321,15 +342,26 @@ class MobileBalloon {
       this.y = this.anchorY + Math.cos(this.wobble * 0.8) * 6;
       return;
     }
-    if (this.spawnScale < 1) this.spawnScale = Math.min(1, this.spawnScale + dt * 4);
+    if (this.spawnScale < 1) this.spawnScale = Math.min(1, this.spawnScale + dt * (gameMode === "LEVELS" ? 2.5 : 4));
     var slowZoneY = height * 0.22;
     var inSlow = (slowMoTimer > 0 && this.y > slowZoneY && this.y < height - this.radius);
     this.y -= this.speed * (inSlow ? 0.3 : scale) * 60 * dt;
-    this.wobble += dt * 2.5;
-    this.drawX = this.x + Math.sin(this.wobble) * 16;
+    this.wobble += dt * (gameMode === "LEVELS" ? 1.4 : 2.5);
+    var curLvl = (gameMode === "LEVELS") ? BB.Content.LEVELS[currentLevelId - 1] : null;
+    if (curLvl && curLvl.hasWind) {
+      var wSpeed = (curLvl.windSpeed || 28) * 0.55;
+      this.x += wSpeed * dt;
+      if (this.x < this.radius + 12) { this.x = this.radius + 12; }
+      else if (this.x > width - this.radius - 12) { this.x = width - this.radius - 12; }
+    }
+    this.drawX = this.x + Math.sin(this.wobble) * (gameMode === "LEVELS" ? 10 : 16);
     if (this.y < -this.radius * 2) {
-      if (gameState === "PLAYING" && gameMode === "INFINITE" && !this.popped && !this.spec.isBomb && !this.spec.isGift && lifeGrace <= 0) { lifeGrace = 1.2; loseLife(); }
-      this.reset(null);
+      if (gameState === "PLAYING") {
+        if (gameMode === "INFINITE" && !this.popped && !this.spec.isBomb && !this.spec.isGift && lifeGrace <= 0) { lifeGrace = 1.2; loseLife(); }
+        this.reset(null);
+      } else {
+        this.popped = true;
+      }
     }
   }
   draw() {
@@ -506,19 +538,21 @@ class MobileBalloon {
 }
 
 class BossBalloon {
-  constructor(hp) {
-    this.radius = 54;
+  constructor(hp, isMidBoss) {
+    this.isMidBoss = !!isMidBoss;
+    this.radius = isMidBoss ? 44 : 54;
     this.x = width / 2;
-    this.y = height * 0.38;
-    this.vx = 75;
-    this.vy = 40;
+    this.y = height * (isMidBoss ? 0.32 : 0.38);
+    var slow = (gameMode === "LEVELS");
+    this.vx = isMidBoss ? (slow ? 55 : 110) : (slow ? 40 : 75);
+    this.vy = isMidBoss ? (slow ? 30 : 55) : (slow ? 22 : 40);
     this.hp = hp;
     this.maxHp = hp;
     this.wobble = 0;
     this.popped = false;
   }
   update(dt) {
-    this.wobble += dt * 3;
+    this.wobble += dt * (this.isMidBoss ? 4.5 : 3);
     this.x += this.vx * dt;
     this.y += this.vy * dt;
     var pad = this.radius + 20;
@@ -531,15 +565,21 @@ class BossBalloon {
     var x = this.x, y = this.y + Math.sin(this.wobble) * 8;
     var r = this.radius;
     ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.55)";
+    ctx.shadowColor = this.isMidBoss ? "rgba(225,29,72,0.55)" : "rgba(0,0,0,0.55)";
     ctx.shadowBlur = 16;
 
     var bg = ctx.createRadialGradient(x - r * 0.3, y - r * 0.4, r * 0.1, x, y, r * 1.2);
-    bg.addColorStop(0, "#ff4d6d");
-    bg.addColorStop(0.5, "#9333ea");
-    bg.addColorStop(1, "#3b0764");
+    if (this.isMidBoss) {
+      bg.addColorStop(0, "#fb7185");
+      bg.addColorStop(0.5, "#e11d48");
+      bg.addColorStop(1, "#881337");
+    } else {
+      bg.addColorStop(0, "#ff4d6d");
+      bg.addColorStop(0.5, "#9333ea");
+      bg.addColorStop(1, "#3b0764");
+    }
     ctx.fillStyle = bg;
-    ctx.strokeStyle = "#ffd000";
+    ctx.strokeStyle = this.isMidBoss ? "#ff5e7a" : "#ffd000";
     ctx.lineWidth = 4.5;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -558,18 +598,18 @@ class BossBalloon {
     ctx.beginPath(); ctx.arc(x - r * 0.24, y - r * 0.08, r * 0.09, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(x + r * 0.32, y - r * 0.08, r * 0.09, 0, Math.PI * 2); ctx.fill();
 
-    ctx.font = "34px -apple-system, sans-serif";
+    ctx.font = (this.isMidBoss ? "28px" : "34px") + " -apple-system, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("👑", x, y - r * 1.05);
+    ctx.fillText(this.isMidBoss ? "💀" : "👑", x, y - r * 1.05);
 
-    var barW = 110, barH = 10;
+    var barW = this.isMidBoss ? 96 : 110, barH = 10;
     var pct = Math.max(0, this.hp / this.maxHp);
     ctx.fillStyle = "rgba(0,0,0,0.7)";
     ctx.fillRect(x - barW / 2 - 2, y + r * 1.15 - 2, barW + 4, barH + 4);
     ctx.fillStyle = "#ef4444";
     ctx.fillRect(x - barW / 2, y + r * 1.15, barW, barH);
-    ctx.fillStyle = "#10b981";
+    ctx.fillStyle = this.isMidBoss ? "#f43f5e" : "#10b981";
     ctx.fillRect(x - barW / 2, y + r * 1.15, barW * pct, barH);
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 1.5;
@@ -577,13 +617,110 @@ class BossBalloon {
 
     ctx.font = "900 10px -apple-system, sans-serif";
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(this.hp + " / " + this.maxHp + " HP", x, y + r * 1.15 + barH / 2 + 1);
+    ctx.fillText(this.hp + " / " + this.maxHp + (this.isMidBoss ? " HP 💀" : " HP 👑"), x, y + r * 1.15 + barH / 2 + 1);
 
     ctx.restore();
   }
   containsPoint(px, py) {
     var dx = px - this.x, dy = py - this.y;
     return (dx * dx + dy * dy) <= ((this.radius + 15) * (this.radius + 15));
+  }
+}
+
+class EscortBalloon {
+  constructor() {
+    this.radius = 34;
+    this.x = width / 2;
+    this.y = height - 70;
+    this.drawX = this.x;
+    this.hp = 3;
+    this.maxHp = 3;
+    this.wobble = 0;
+    this.popped = false;
+    this.speed = 26;
+  }
+  update(dt) {
+    if (this.popped) return;
+    this.wobble += dt * 2.2;
+    this.y -= this.speed * dt;
+    this.drawX = this.x + Math.sin(this.wobble) * 14;
+
+    for (var i = 0; i < balloons.length; i++) {
+      var b = balloons[i];
+      if (!b.popped && (b.isHazard || (b.spec && b.spec.isBomb))) {
+        var d = Math.hypot(this.drawX - b.drawX, this.y - b.y);
+        if (d < this.radius + b.radius) {
+          b.popped = true;
+          this.hp--;
+          triggerShake(10, 0.25);
+          BB.UI.flash(0.2);
+          try { sound().bomb(); } catch (e) {}
+          burst(b.drawX, b.y, "#ff3366", 18, true);
+          textPopups.push(new MobileTextPopup("TRAVELER HIT! 💔 (" + this.hp + "/" + this.maxHp + ")", this.drawX, this.y - 25, "#ff3366", true));
+          if (this.hp <= 0) {
+            this.popped = true;
+            burst(this.drawX, this.y, "#ffd700", 35, true);
+            try { sound().lifeLost(); } catch (e) {}
+            setTimeout(function () {
+              if (gameState === "PLAYING" && gameMode === "LEVELS") {
+                failCampaignStage("TRAVELER POPPED! 💔");
+              }
+            }, 300);
+            return;
+          }
+        }
+      }
+    }
+  }
+  draw() {
+    if (this.popped) return;
+    var x = this.drawX, y = this.y, r = this.radius;
+    ctx.save();
+    ctx.shadowColor = "rgba(255, 215, 0, 0.65)";
+    ctx.shadowBlur = 18;
+
+    var grad = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+    grad.addColorStop(0, "#fff9db");
+    grad.addColorStop(0.5, "#ffd700");
+    grad.addColorStop(1, "#f59e0b");
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(110, 80, 50, 0.75)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.4, y + r * 0.7);
+    ctx.lineTo(x - 10, y + r * 1.3);
+    ctx.moveTo(x + r * 0.4, y + r * 0.7);
+    ctx.lineTo(x + 10, y + r * 1.3);
+    ctx.stroke();
+
+    ctx.fillStyle = "#854d0e";
+    ctx.fillRect(x - 14, y + r * 1.3, 28, 16);
+    ctx.fillStyle = "#a16207";
+    ctx.fillRect(x - 12, y + r * 1.3 + 2, 24, 12);
+
+    ctx.font = "14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🧑‍🚀", x, y + r * 1.25);
+    ctx.fillText("🎈", x, y - 4);
+
+    var heartStr = "❤️".repeat(Math.max(0, this.hp)) + "🖤".repeat(Math.max(0, this.maxHp - this.hp));
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText(heartStr, x, y - r - 12);
+
+    var pct = Math.min(100, Math.max(0, Math.floor(((height - 70 - y) / (height - 160)) * 100)));
+    ctx.font = "900 11px sans-serif";
+    ctx.fillStyle = "#00f5d4";
+    ctx.fillText("RESCUE: " + pct + "%", x, y - r - 26);
+    ctx.restore();
   }
 }
 
@@ -729,6 +866,32 @@ class SlingshotProjectile {
     if (this.trail.length > 14) this.trail.shift();
     for (var i = 0; i < this.trail.length; i++) this.trail[i].a -= dt * 2.5;
 
+    if (bossBalloon && !bossBalloon.popped && bossBalloon.containsPoint(this.x, this.y)) {
+      this.pierceCount++;
+      var dmg = (this.pierceCount > 1 ? 2 : 1);
+      bossBalloon.hp = Math.max(0, bossBalloon.hp - dmg);
+      bossHp = bossBalloon.hp;
+      triggerShake(7, 0.16);
+      sound().laser();
+      burst(this.x, this.y, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd000", 16);
+      textPopups.push(new MobileTextPopup("-" + dmg + " HP! " + (bossBalloon.isMidBoss ? "💀" : "👑"), this.x, this.y - 20, "#ff4444"));
+      score += 150 * dmg;
+      this.vx *= 0.85;
+      this.vy *= 0.85;
+      if (bossBalloon.hp <= 0) {
+        bossBalloon.popped = true;
+        burst(bossBalloon.x, bossBalloon.y, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd700", 45, true);
+        shockwaves.push(new MobileShockwave(bossBalloon.x, bossBalloon.y, 250, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd700"));
+        sound().victory();
+      }
+      updateHud();
+      var remB = balloons.filter(function (o) { return !o.popped; }).length;
+      slingshotActiveBalloons = remB + (bossBalloon && !bossBalloon.popped ? 1 : 0);
+      if (remB === 0 && (!bossBalloon || bossBalloon.popped)) {
+        setTimeout(winSlingshotStage, 380);
+      }
+    }
+
     for (var b = balloons.length - 1; b >= 0; b--) {
       var bl = balloons[b];
       if (!bl.popped && bl.containsPoint(this.x, this.y)) {
@@ -751,8 +914,8 @@ class SlingshotProjectile {
         }
         updateHud();
         var rem = balloons.filter(function (o) { return !o.popped; }).length;
-        slingshotActiveBalloons = rem;
-        if (rem === 0) {
+        slingshotActiveBalloons = rem + (bossBalloon && !bossBalloon.popped ? 1 : 0);
+        if (rem === 0 && (!bossBalloon || bossBalloon.popped)) {
           setTimeout(winSlingshotStage, 380);
         }
       }

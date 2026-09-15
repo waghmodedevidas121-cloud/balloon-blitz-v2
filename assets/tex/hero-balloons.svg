@@ -49,25 +49,7 @@
     <rect x="-4" y="-13" width="8" height="8" fill="#F5A524"/>
   </g>
 
-  <!-- balloons -->
-  <g>
-    <path d="M200 118 C200 150 208 158 208 168" stroke="rgba(110,91,84,.5)" stroke-width="1.6" fill="none"/>
-    <ellipse cx="200" cy="96" rx="34" ry="40" fill="url(#bA)"/>
-    <path d="M194 134 h12 l-3 8 h-6 z" fill="#B9403A"/>
-    <ellipse cx="189" cy="80" rx="8" ry="12" fill="#fff" opacity=".45"/>
-  </g>
-  <g>
-    <path d="M330 92 C330 128 322 136 322 148" stroke="rgba(110,91,84,.5)" stroke-width="1.6" fill="none"/>
-    <ellipse cx="330" cy="66" rx="42" ry="49" fill="url(#bB)"/>
-    <path d="M323 112 h14 l-3 9 h-8 z" fill="#B96A1E"/>
-    <ellipse cx="317" cy="48" rx="9" ry="14" fill="#fff" opacity=".45"/>
-  </g>
-  <g>
-    <path d="M452 140 C452 168 460 176 460 186" stroke="rgba(110,91,84,.5)" stroke-width="1.6" fill="none"/>
-    <ellipse cx="452" cy="120" rx="29" ry="34" fill="url(#bC)"/>
-    <path d="M447 152 h10 l-2 7 h-6 z" fill="#2F7BA6"/>
-    <ellipse cx="443" cy="107" rx="7" ry="10" fill="#fff" opacity=".45"/>
-  </g>
+  <!-- scenery details -->
 
   <!-- birds -->
   <g stroke="rgba(72,55,48,.55)" stroke-width="2" fill="none" stroke-linecap="round">

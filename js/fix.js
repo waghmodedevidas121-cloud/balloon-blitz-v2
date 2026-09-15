@@ -61,7 +61,7 @@
     BB[name] = o;
   }
 
-  var MUSIC_API = ["init", "play", "playMode", "apply", "stop", "want", "setRealm"];
+  var MUSIC_API = ["init", "play", "playMode", "apply", "stop", "want", "setRealm", "setFever", "getTrackInfo", "getTracks", "fadeOut", "setMood"];
   var SKY_API = ["setRealm", "setWorld", "setTimeOfDay", "setQuality", "pause", "resume"];
 
   stub("Music", MUSIC_API);
@@ -71,7 +71,12 @@
     BB.Audio = BB.Audio || {};
     BB.Audio.sound = BB.Audio.sound || {
       muted: false,
-      init: function () {}, pop: function () {}, vibrate: function () {}, victory: function () {}
+      init: function () {}, pop: function () {}, vibrate: function () {}, victory: function () {},
+      bomb: function () {}, freeze: function () {}, gold: function () {}, powerup: function () {},
+      slingshotAim: function () {}, slingshotTwang: function () {}, wallBounce: function () {},
+      laser: function () {}, ray: function () {}, bossHit: function () {}, bossDefeat: function () {},
+      fever: function () {}, coin: function () {}, uiClick: function () {}, star: function () {},
+      lifeLost: function () {}, gameOver: function () {}
     };
   }
   shield(BB.Music, MUSIC_API);

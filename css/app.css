@@ -966,6 +966,16 @@ body.bb-playing #bbNavPeek { display: none !important; }
   background: linear-gradient(180deg, #FFE7C2, #F3C88B);
   border-color: rgba(217, 130, 43, .55);
 }
+.arcade-tile.midboss-tile {
+  background: linear-gradient(180deg, #FFE4E6, #FECDD3);
+  border-color: rgba(225, 29, 72, .55);
+}
+.arcade-tile.boss-tile .tile-num {
+  color: #9A3412;
+}
+.arcade-tile.midboss-tile .tile-num {
+  color: #9F1239;
+}
 .tile-num {
   font-family: var(--font-display);
   font-size: 18px;

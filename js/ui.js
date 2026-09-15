@@ -2,7 +2,7 @@
 window.BB = window.BB || {};
 BB.UI = (function () {
   var SCREENS = ["homeScreen", "levelSelectScreen", "dashboardScreen", "shopScreen",
-    "boardScreen", "levelCompleteScreen", "gameOverScreen", "pauseScreen", "settingsModal", "howToModal", "dailyModal"];
+    "boardScreen", "levelCompleteScreen", "gameOverScreen", "pauseScreen", "settingsModal", "howToModal", "dailyModal", "audioCreditsModal"];
   var NAV = ["homeScreen", "levelSelectScreen", "shopScreen", "boardScreen", "dashboardScreen"];
   var annT = null;
   var currentMapTab = "campaign";
@@ -32,6 +32,11 @@ BB.UI = (function () {
   }
   function show(id) {
     SCREENS.forEach(function (s) { var el = $(s); if (el) el.classList.toggle("hidden", s !== id); });
+    if (id !== null && id !== "pauseScreen") {
+      gameState = "HOME";
+      if (typeof clearField === "function") clearField();
+      else if (BB.Engine && BB.Engine.clear) BB.Engine.clear();
+    }
     var st = BB.Engine.state(), playing = (st.state === "PLAYING" || st.state === "PAUSED");
     if (playing) { try { BB.Engine.lockInput(); } catch (e) {} }
     $("mobileHud").style.display = playing ? "flex" : "none";
@@ -43,14 +48,23 @@ BB.UI = (function () {
     document.querySelectorAll("#bottomNav button").forEach(function (b) {
       b.classList.toggle("active", b.dataset.screen === id);
     });
-    var menuThemes = { homeScreen: "home", levelSelectScreen: "home", dashboardScreen: "home", shopScreen: "home", boardScreen: "home", gameOverScreen: "home", levelCompleteScreen: "campaign" };
-    if (menuThemes[id]) { try { BB.Music.play("home"); } catch (e) {} }
+    var menuThemes = {
+      homeScreen: "home",
+      levelSelectScreen: "levelselect",
+      dashboardScreen: "home",
+      shopScreen: "shop",
+      boardScreen: "home",
+      gameOverScreen: "survival",
+      levelCompleteScreen: "campaign"
+    };
+    if (menuThemes[id]) { try { BB.Music.play(menuThemes[id]); } catch (e) {} }
     if (id === "homeScreen") refreshHome();
     if (id === "levelSelectScreen") renderLevels();
     if (id === "dashboardScreen") renderProfile();
     if (id === "shopScreen") renderShop();
     if (id === "boardScreen") renderBoard("local");
     if (id === "dailyModal") renderDailyGrid();
+    if (id === "audioCreditsModal") renderAudioCredits();
   }
   function wallet() {
     var u = BB.Save.data;
@@ -66,22 +80,24 @@ BB.UI = (function () {
     setT("homeBest", best);
     setT("homeStars", stars + "⭐");
     setT("homeCombo", "x" + (u.maxCombo || 1));
+    var maxL = (BB.Content.LEVELS ? BB.Content.LEVELS.length : (BB.Content.MAX_LEVELS || 600));
     var un = Object.keys(u.levelsProgress || {}).filter(function (k) { return u.levelsProgress[k].unlocked; }).length;
-    setT("campaignMeta", "Stage " + un + "/500 • " + (BB.Player.totalCampaignStars ? BB.Player.totalCampaignStars() : stars) + " ⭐");
+    setT("campaignMeta", "Stage " + un + "/" + maxL + " • " + (BB.Player.totalCampaignStars ? BB.Player.totalCampaignStars() : stars) + " ⭐");
     setT("survivalMeta", "Best: " + (u.infiniteHighScore || 0) + " • Wave " + (u.maxWave || 1));
     setT("blitzMeta", "Best: " + (u.blitzHighScore || 0));
 
     // Update Tactical Puzzle mode meta
     var pp = u.puzzleProgress || {};
     var pStars = 0, pCleared = 0;
+    var pTotal = BB.Content.PUZZLES ? BB.Content.PUZZLES.length : 25;
     BB.Content.PUZZLES.forEach(function (pz) {
       var p = pp[pz.id];
       if (p && p.stars > 0) pCleared++;
       if (p && p.stars) pStars += p.stars;
     });
-    var pNext = Math.min(10, Object.keys(pp).filter(function (k) { return pp[k].unlocked; }).length);
+    var pNext = Math.min(pTotal, Object.keys(pp).filter(function (k) { return pp[k].unlocked; }).length);
     var pMeta = $("puzzleMeta");
-    if (pMeta) pMeta.innerText = "Stage " + pNext + "/10 • " + pStars + "/30 ⭐";
+    if (pMeta) pMeta.innerText = "Stage " + pNext + "/" + pTotal + " • " + pStars + "/" + (pTotal * 3) + " ⭐";
 
     var sMeta = $("slingMeta");
     var sp = u.slingshotProgress || {};
@@ -143,9 +159,12 @@ BB.UI = (function () {
     var tag = $("campTag"), time = $("campTime"), title = $("campTitle"), btn = $("btnLaunchCampaign");
     var u = BB.Save.data, p = (u.levelsProgress && u.levelsProgress[l.id]) || { unlocked: l.id === 1, stars: 0 };
 
+    var movesTxt = "🎯 " + (l.moves || 18) + " Moves";
+    var diffTag = l.difficulty ? (" • " + l.difficulty.toUpperCase()) : "";
+    if (time) time.innerText = movesTxt;
+
     if (l.isBoss) {
-      if (tag) { tag.innerText = "👑 BOSS STAGE " + l.id; tag.style.background = "linear-gradient(135deg, #ea580c, #9a3412)"; }
-      if (time) time.innerText = "⏱ " + l.time + "s";
+      if (tag) { tag.innerText = "👑 " + (l.worldName || "WORLD").toUpperCase() + " APEX BOSS"; tag.style.background = "linear-gradient(135deg, #ea580c, #9a3412)"; }
       if (title) title.innerText = l.desc;
       if (btn) {
         if (!p.unlocked) {
@@ -153,14 +172,31 @@ BB.UI = (function () {
           btn.classList.remove("primary");
           btn.style.opacity = "0.55";
         } else {
-          btn.innerText = "⚔️ FIGHT BOSS " + l.id;
+          btn.innerText = "⚔️ CONQUER BOSS " + l.id;
+          btn.classList.add("primary");
+          btn.style.opacity = "1";
+        }
+      }
+    } else if (l.isMidBoss) {
+      if (tag) { tag.innerText = "💀 MID-BOSS • " + (l.worldName || "WORLD").toUpperCase(); tag.style.background = "linear-gradient(135deg, #e11d48, #881337)"; }
+      if (title) title.innerText = l.desc;
+      if (btn) {
+        if (!p.unlocked) {
+          btn.innerText = "🔒 LOCKED (CLEAR STG " + (l.id - 1) + ")";
+          btn.classList.remove("primary");
+          btn.style.opacity = "0.55";
+        } else {
+          btn.innerText = "⚔️ FIGHT MID-BOSS " + l.id;
           btn.classList.add("primary");
           btn.style.opacity = "1";
         }
       }
     } else {
-      if (tag) { tag.innerText = "STAGE " + l.id; tag.style.background = "linear-gradient(135deg, #7c3aed, #4c1d95)"; }
-      if (time) time.innerText = "⏱ " + l.time + "s";
+      if (tag) {
+        var typLabel = l.isEscort ? "🎈 ESCORT" : (l.type === "sequence" ? "🌈 SEQUENCE" : (l.type === "color" ? "🎯 HARVEST" : ("STAGE " + l.id)));
+        tag.innerText = typLabel + diffTag;
+        tag.style.background = l.isEscort ? "linear-gradient(135deg, #0284c7, #0369a1)" : (l.type === "sequence" ? "linear-gradient(135deg, #d97706, #b45309)" : "linear-gradient(135deg, #7c3aed, #4c1d95)");
+      }
       if (title) title.innerText = l.desc;
       if (btn) {
         if (!p.unlocked) {
@@ -179,11 +215,26 @@ BB.UI = (function () {
   function updatePuzMissionCard() {
     var pz = BB.Content.PUZZLES[selectedPuzId - 1] || BB.Content.PUZZLES[0];
     var tag = $("puzTag"), darts = $("puzDarts"), title = $("puzTitle"), desc = $("puzDesc"), btn = $("btnLaunchPuzzle");
-    if (tag) tag.innerText = "PUZZLE " + pz.id;
+    if (tag) {
+      if (pz.isBoss) {
+        tag.innerText = "👑 APEX BOSS " + pz.id;
+        tag.style.background = "linear-gradient(135deg, #ea580c, #9a3412)";
+      } else if (pz.isMidBoss) {
+        tag.innerText = "💀 MID-BOSS " + pz.id;
+        tag.style.background = "linear-gradient(135deg, #e11d48, #881337)";
+      } else {
+        tag.innerText = "PUZZLE " + pz.id;
+        tag.style.background = "linear-gradient(135deg, #0d9488, #115e59)";
+      }
+    }
     if (darts) darts.innerText = "🎯 " + pz.darts + " Dart" + (pz.darts > 1 ? "s" : "");
     if (title) title.innerText = pz.name;
     if (desc) desc.innerText = pz.desc;
-    if (btn) btn.innerText = "▶ SOLVE PUZZLE " + pz.id;
+    if (btn) {
+      if (pz.isBoss) btn.innerText = "⚔️ TACKLE APEX BOSS " + pz.id;
+      else if (pz.isMidBoss) btn.innerText = "⚔️ TACKLE MID-BOSS " + pz.id;
+      else btn.innerText = "▶ SOLVE PUZZLE " + pz.id;
+    }
   }
 
   function renderCampaignGrid() {
@@ -191,7 +242,8 @@ BB.UI = (function () {
     g.innerHTML = "";
     var stars = BB.Player.totalCampaignStars ? BB.Player.totalCampaignStars() : 0, cleared = 0, u = BB.Save.data;
     Object.keys(u.levelsProgress).forEach(function (k) { if (u.levelsProgress[k].stars > 0) cleared++; });
-    $("campaignProgress").innerText = "Progress: " + stars + "/1500 ⭐ • " + cleared + "/500 cleared";
+    var maxL = (BB.Content.LEVELS ? BB.Content.LEVELS.length : (BB.Content.MAX_LEVELS || 600));
+    $("campaignProgress").innerText = "Progress: " + stars + "/" + (maxL * 3) + " ⭐ • " + cleared + "/" + maxL + " cleared";
 
     // Auto-select latest unlocked stage
     var highestUnlocked = 1;
@@ -201,7 +253,7 @@ BB.UI = (function () {
 
     // Auto-align world to selected stage if not explicitly set
     if (!selectedCampWorld) {
-      selectedCampWorld = Math.min(20, Math.floor((highestUnlocked - 1) / 25) + 1);
+      selectedCampWorld = Math.min(BB.Content.WORLDS.length, Math.floor((highestUnlocked - 1) / 25) + 1);
     }
     var w = BB.Content.WORLDS[selectedCampWorld - 1] || BB.Content.WORLDS[0];
     if (selectedCampId < w.start || selectedCampId > w.end) {
@@ -223,11 +275,12 @@ BB.UI = (function () {
       var p = u.levelsProgress[l.id] || { unlocked: l.id === 1, stars: 0 };
       var isSel = (l.id === selectedCampId);
       var isBoss = !!l.isBoss;
+      var isMidBoss = !!l.isMidBoss;
       var c = document.createElement("div");
-      c.className = "arcade-tile" + (p.unlocked ? "" : " locked") + (isSel ? " selected" : "") + (isBoss ? " boss-tile" : "");
+      c.className = "arcade-tile" + (p.unlocked ? "" : " locked") + (isSel ? " selected" : "") + (isBoss ? " boss-tile" : "") + (isMidBoss ? " midboss-tile" : "");
 
       var starStr = p.stars > 0 ? "⭐".repeat(p.stars) : (p.unlocked ? "☆☆☆" : "");
-      var crownBadge = isBoss ? '<span class="boss-crown">👑</span>' : '';
+      var crownBadge = isBoss ? '<span class="boss-crown">👑</span>' : (isMidBoss ? '<span class="boss-crown">💀</span>' : '');
       c.innerHTML = crownBadge + '<div class="tile-num">' + (p.unlocked ? l.id : "🔒") + "</div>" +
         '<div class="tile-stars">' + starStr + "</div>";
       c.dataset.lvl = l.id; c.dataset.locked = p.unlocked ? "0" : "1";
@@ -306,7 +359,8 @@ BB.UI = (function () {
       if (p.stars > 0) cleared++;
       stars += (p.stars || 0);
     });
-    $("puzzleProgress").innerText = "Progress: " + stars + "/30 ⭐ • " + cleared + "/10 cleared";
+    var pTotal = BB.Content.PUZZLES ? BB.Content.PUZZLES.length : 50;
+    $("puzzleProgress").innerText = "Progress: " + stars + "/" + (pTotal * 3) + " ⭐ • " + cleared + "/" + pTotal + " cleared";
 
     var highestUnlocked = 1;
     BB.Content.PUZZLES.forEach(function (pz) {
@@ -320,11 +374,14 @@ BB.UI = (function () {
     BB.Content.PUZZLES.forEach(function (pz) {
       var p = pp[pz.id] || { unlocked: pz.id === 1, stars: 0 };
       var isSel = (pz.id === selectedPuzId);
+      var isBoss = !!pz.isBoss;
+      var isMidBoss = !!pz.isMidBoss;
       var c = document.createElement("div");
-      c.className = "arcade-tile" + (p.unlocked ? "" : " locked") + (isSel ? " selected" : "");
+      c.className = "arcade-tile" + (p.unlocked ? "" : " locked") + (isSel ? " selected" : "") + (isBoss ? " boss-tile" : "") + (isMidBoss ? " midboss-tile" : "");
       
       var starStr = p.stars > 0 ? "⭐".repeat(p.stars) : (p.unlocked ? "☆☆☆" : "");
-      c.innerHTML = '<div class="tile-num">' + (p.unlocked ? pz.id : "🔒") + "</div>" +
+      var crownBadge = isBoss ? '<span class="boss-crown">👑</span>' : (isMidBoss ? '<span class="boss-crown">💀</span>' : '');
+      c.innerHTML = crownBadge + '<div class="tile-num">' + (p.unlocked ? pz.id : "🔒") + "</div>" +
         '<div class="tile-stars">' + starStr + "</div>";
       c.dataset.pz = pz.id; c.dataset.locked = p.unlocked ? "0" : "1";
       g.appendChild(c);
@@ -368,8 +425,19 @@ BB.UI = (function () {
     var tag = $("slingTag"), arrows = $("slingArrows"), title = $("slingTitle"), desc = $("slingDesc"), btn = $("btnLaunchSlingshot");
     var u = BB.Save.data, sp = (u.slingshotProgress && u.slingshotProgress[selectedSlingId]) || { unlocked: selectedSlingId === 1 };
 
-    if (tag) tag.innerText = "STAGE " + (stg.id || selectedSlingId);
-    if (arrows) arrows.innerText = "🏹 " + stg.arrows + " Arrows";
+    if (tag) {
+      if (stg.isBoss) {
+        tag.innerText = "👑 TITAN BOSS " + (stg.id || selectedSlingId);
+        tag.style.background = "linear-gradient(135deg, #ea580c, #9a3412)";
+      } else if (stg.isMidBoss) {
+        tag.innerText = "💀 MID-BOSS " + (stg.id || selectedSlingId);
+        tag.style.background = "linear-gradient(135deg, #e11d48, #881337)";
+      } else {
+        tag.innerText = "STAGE " + (stg.id || selectedSlingId);
+        tag.style.background = "linear-gradient(135deg, #f97316, #c2410c)";
+      }
+    }
+    if (arrows) arrows.innerText = "🏹 " + stg.arrows + " Arrows" + (stg.bossHp ? " • 👾 " + stg.bossHp + " HP" : "");
     if (title) title.innerText = stg.name;
     if (desc) desc.innerText = stg.desc;
     if (btn) {
@@ -377,6 +445,14 @@ BB.UI = (function () {
         btn.innerText = "🔒 LOCKED (CLEAR STG " + (selectedSlingId - 1) + ")";
         btn.classList.remove("primary");
         btn.style.opacity = "0.55";
+      } else if (stg.isBoss) {
+        btn.innerText = "⚔️ DEFEAT TITAN BOSS " + (stg.id || selectedSlingId);
+        btn.classList.add("primary");
+        btn.style.opacity = "1";
+      } else if (stg.isMidBoss) {
+        btn.innerText = "⚔️ FIGHT MID-BOSS " + (stg.id || selectedSlingId);
+        btn.classList.add("primary");
+        btn.style.opacity = "1";
       } else {
         btn.innerText = "▶ SHOOT STAGE " + (stg.id || selectedSlingId);
         btn.classList.add("primary");
@@ -395,7 +471,8 @@ BB.UI = (function () {
       if (p.stars > 0) cleared++;
       stars += (p.stars || 0);
     });
-    $("slingshotProgress").innerText = "Progress: " + stars + "/75 ⭐ • " + cleared + "/25 cleared";
+    var sTotal = BB.Content.SLING_STAGES ? BB.Content.SLING_STAGES.length : 50;
+    $("slingshotProgress").innerText = "Progress: " + stars + "/" + (sTotal * 3) + " ⭐ • " + cleared + "/" + sTotal + " cleared";
 
     var highestUnlocked = 1;
     (BB.Content.SLING_STAGES || []).forEach(function (stg) {
@@ -409,11 +486,14 @@ BB.UI = (function () {
     (BB.Content.SLING_STAGES || []).forEach(function (stg) {
       var p = sp[stg.id] || { unlocked: stg.id === 1, stars: 0 };
       var isSel = (stg.id === selectedSlingId);
+      var isBoss = !!stg.isBoss;
+      var isMidBoss = !!stg.isMidBoss;
       var c = document.createElement("div");
-      c.className = "arcade-tile" + (p.unlocked ? "" : " locked") + (isSel ? " selected" : "");
+      c.className = "arcade-tile" + (p.unlocked ? "" : " locked") + (isSel ? " selected" : "") + (isBoss ? " boss-tile" : "") + (isMidBoss ? " midboss-tile" : "");
 
       var starStr = p.stars > 0 ? "⭐".repeat(p.stars) : (p.unlocked ? "☆☆☆" : "");
-      c.innerHTML = '<div class="tile-num">' + (p.unlocked ? stg.id : "🔒") + "</div>" +
+      var crownBadge = isBoss ? '<span class="boss-crown">👑</span>' : (isMidBoss ? '<span class="boss-crown">💀</span>' : '');
+      c.innerHTML = crownBadge + '<div class="tile-num">' + (p.unlocked ? stg.id : "🔒") + "</div>" +
         '<div class="tile-stars">' + starStr + "</div>";
       c.dataset.sling = stg.id; c.dataset.locked = p.unlocked ? "0" : "1";
       g.appendChild(c);
@@ -542,20 +622,21 @@ BB.UI = (function () {
   function showLevelComplete(r) {
     var isPz = !!r.isPuzzle;
     var isSling = !!r.isSlingshot;
+    var isCamp = !!r.isCampaign || (!isPz && !isSling);
     var tEl = $("mLevelCompleteTitle");
-    if (tEl) tEl.innerText = isPz ? "PUZZLE SOLVED! 🧠" : (isSling ? "TRICKSHOT CLEAR! 🏹" : "LEVEL COMPLETE!");
+    if (tEl) tEl.innerText = isPz ? "PUZZLE SOLVED! 🧠" : (isSling ? "TRICKSHOT CLEAR! 🏹" : "STAGE CLEAR! 🎯");
     $("mLevelStars").innerText = "⭐".repeat(r.stars) + "☆".repeat(3 - r.stars);
-    $("mLevelSummary").innerText = (isPz || isSling) ? ("Cleared with " + r.time + "!") : "Objective cleared!";
+    $("mLevelSummary").innerText = isPz ? ("Cleared in " + r.time + " darts!") : (isSling ? ("Cleared with " + r.time + "!") : ("Stage completed with " + r.time + " moves left!"));
     $("mLevelScoreVal").innerText = r.score;
     var lbl = $("mLevelTimeLbl");
-    if (lbl) lbl.innerText = (isPz || isSling) ? "Remaining" : "Time Left";
-    $("mLevelTimeVal").innerText = (isPz || isSling) ? r.time : (r.time + "s");
+    if (lbl) lbl.innerText = isPz ? "Darts Left" : (isSling ? "Remaining" : "Moves Left");
+    $("mLevelTimeVal").innerText = isPz ? (r.time + " 🎯") : (isSling ? r.time : (r.time + " Moves"));
     $("mLevelRewardVal").innerText = "+" + r.coins + "🪙 +" + r.xp + "XP" + (r.levelUp ? " • LV UP!" : "");
     var canNext = isPz ? (r.puzzleId < BB.Content.PUZZLES.length)
       : (isSling ? (r.slingshotId < BB.Content.SLING_STAGES.length)
-      : (currentLevelId < (BB.Content.MAX_LEVELS || 500)));
+      : (currentLevelId < (BB.Content.MAX_LEVELS || 600)));
     $("btnNextStage").style.display = canNext ? "flex" : "none";
-    announce(isPz ? "🧠 PUZZLE SOLVED!" : (isSling ? "🏹 STAGE CLEAR!" : "🎉 STAGE CLEAR!"), r.stars + " stars", isSling ? "#f97316" : (isPz ? "#00f5d4" : "#33ff77"));
+    announce(isPz ? "🧠 PUZZLE SOLVED!" : (isSling ? "🏹 STAGE CLEAR!" : "🎯 STAGE CLEAR!"), r.stars + " stars", isSling ? "#f97316" : (isPz ? "#00f5d4" : "#33ff77"));
     show("levelCompleteScreen");
   }
   function showGameOver(r) {
@@ -580,9 +661,11 @@ BB.UI = (function () {
     } else if (st.mode === "INFINITE") {
       t.innerText = "SURVIVAL OVER"; s.innerText = "You survived " + r.pops + " pops!";
       $("mEndWaveRow").innerText = "🌊 Reached WAVE " + r.wave + " • Best " + (BB.Save.data.maxWave || r.wave);
-    } else if (st.mode === "LEVELS") {
-      t.innerText = "TIME UP"; s.innerText = "Objective not reached — try again!";
-      $("mEndWaveRow").innerText = "🎯 Stage " + currentLevelId;
+    } else if (st.mode === "LEVELS" || r.isCampaign) {
+      t.innerText = r.failReason || "OUT OF MOVES! 🎯";
+      s.innerText = r.levelDesc ? (r.levelDesc + " (" + (r.progress || 0) + "/" + (r.target || 0) + ")") : "Moves depleted — plan your pops carefully!";
+      $("mEndWaveRow").innerText = "🎯 World " + (r.world || 1) + " • Stage " + (r.levelId || currentLevelId);
+      $("btnRetry").innerText = "🔄 Retry Stage";
     } else {
       t.innerText = "TIME UP!"; s.innerText = "60-second Blitz finished!";
       $("mEndWaveRow").innerText = "🔥 Max combo x" + r.combo;
@@ -598,13 +681,38 @@ BB.UI = (function () {
         if (el.classList.contains("toggle")) { el.innerText = pair[1] ? "ON" : "OFF"; el.classList.toggle("on", !!pair[1]); }
         else if (pair[0] === "btnSound") { el.innerText = pair[1] ? "🔊" : "🔇"; }
       });
+    var fb = $("setFullBtn");
+    if (fb) {
+      var isFull = !!document.fullscreenElement;
+      fb.innerText = isFull ? "EXIT" : "GO";
+      fb.classList.toggle("on", isFull);
+    }
     BB.Audio.sound.muted = !s.sound;
   }
   function setSetting(k, v) {
     BB.Save.data.settings[k] = v; BB.Save.save(); syncSettings();
     try { BB.Music.apply(); } catch (e) {}
   }
+  var previousScreenBeforeSettings = "homeScreen";
+  function openSettings(fromScreen) {
+    previousScreenBeforeSettings = fromScreen || (gameState === "PAUSED" ? "pauseScreen" : "homeScreen");
+    BB.Audio.sound.init();
+    syncSettings();
+    show("settingsModal");
+  }
+  function closeSettings() {
+    if (previousScreenBeforeSettings === "pauseScreen") {
+      gameState = "PAUSED";
+      show("pauseScreen");
+    } else {
+      gameState = "HOME";
+      show(previousScreenBeforeSettings || "homeScreen");
+    }
+  }
   function bind() {
+    if ($("btnOpenSettings")) $("btnOpenSettings").addEventListener("click", function () { openSettings("homeScreen"); });
+    if ($("btnPauseSettings")) $("btnPauseSettings").addEventListener("click", function () { openSettings("pauseScreen"); });
+    if ($("btnDashSettings")) $("btnDashSettings").addEventListener("click", function () { openSettings("dashboardScreen"); });
     $("btnPlayPrimary").addEventListener("click", function () { BB.Audio.sound.init(); currentMapTab = "campaign"; renderLevels(); gameState = "HOME"; show("levelSelectScreen"); });
     $("btnPlayBlitz").addEventListener("click", startBlitz);
     $("btnPlayInfinite").addEventListener("click", startInfinite);
@@ -638,9 +746,25 @@ BB.UI = (function () {
         }
       });
     }
-    $("btnCloseSettings").addEventListener("click", function () { show("homeScreen"); gameState = "HOME"; });
+    $("btnCloseSettings").addEventListener("click", closeSettings);
+    if ($("settingsModal")) {
+      $("settingsModal").addEventListener("click", function (e) {
+        if (e.target === $("settingsModal")) closeSettings();
+      });
+    }
     $("btnHowTo").addEventListener("click", function () { show("howToModal"); });
     $("btnCloseHowTo").addEventListener("click", function () { show("settingsModal"); });
+    if ($("btnAudioCredits")) {
+      $("btnAudioCredits").addEventListener("click", function () {
+        renderAudioCredits();
+        show("audioCreditsModal");
+      });
+    }
+    if ($("btnCloseAudioCredits")) {
+      $("btnCloseAudioCredits").addEventListener("click", function () {
+        show("settingsModal");
+      });
+    }
     $("setSoundBtn").addEventListener("click", function () { setSetting("sound", !BB.Save.data.settings.sound); });
     $("setVibBtn").addEventListener("click", function () { setSetting("vibration", !BB.Save.data.settings.vibration); });
     $("setFxBtn").addEventListener("click", function () { setSetting("effects", !BB.Save.data.settings.effects); });
@@ -649,6 +773,7 @@ BB.UI = (function () {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function () {});
       else document.exitFullscreen().catch(function () {});
     });
+    document.addEventListener("fullscreenchange", function () { syncSettings(); });
     $("btnResetProgress").addEventListener("click", function () {
       if (confirm("Reset all progress? Stars, scores, coins and achievements will be wiped.")) {
         var s = BB.Save.data.settings;
@@ -671,7 +796,7 @@ BB.UI = (function () {
         if (st.slingshot < BB.Content.SLING_STAGES.length) BB.Engine.startSlingshot(st.slingshot + 1);
         else { gameState = "HOME"; currentMapTab = "slingshot"; renderLevels(); show("levelSelectScreen"); }
       } else {
-        if (currentLevelId < (BB.Content.MAX_LEVELS || 500)) startLevel(currentLevelId + 1);
+        if (currentLevelId < (BB.Content.MAX_LEVELS || 600)) startLevel(currentLevelId + 1);
         else { gameState = "HOME"; show("homeScreen"); }
       }
     });
@@ -757,29 +882,7 @@ BB.UI = (function () {
   function decor() {
     var w = $("bgDecor");
     if (!w) return;
-    w.innerHTML = "";
-    var cols = ["#ff3366", "#33ccff", "#33ff77", "#ffd700", "#a29bfe", "#00f5d4", "#ff884d"];
-    for (var i = 0; i < 9; i++) {
-      var d = document.createElement("div"); d.className = "bg-balloon";
-      var s = 22 + Math.random() * 32;
-      d.style.width = s + "px"; d.style.height = (s * 1.25) + "px";
-      d.style.left = (Math.random() * 94) + "vw";
-      d.style.background = "radial-gradient(circle at 35% 30%, #ffffff 0%, " + cols[i % cols.length] + " 45%, #080c24 95%)";
-      d.style.opacity = (0.2 + Math.random() * 0.18).toString();
-      d.style.animationDuration = (14 + Math.random() * 12) + "s";
-      d.style.animationDelay = (-Math.random() * 20) + "s";
-      w.appendChild(d);
-    }
-    for (var j = 0; j < 14; j++) {
-      var sp = document.createElement("div"); sp.className = "bg-sparkle";
-      var sz = 3 + Math.random() * 4;
-      sp.style.width = sz + "px"; sp.style.height = sz + "px";
-      sp.style.left = (Math.random() * 96) + "vw";
-      sp.style.top = (Math.random() * 85) + "vh";
-      sp.style.animationDelay = (Math.random() * 3) + "s";
-      sp.style.animationDuration = (2 + Math.random() * 2) + "s";
-      w.appendChild(sp);
-    }
+    // Keep decor clean - no balloons rendered outside active game modes
     var fx = $("homeFx");
     if (fx) fx.innerHTML = "";
   }
@@ -832,6 +935,39 @@ BB.UI = (function () {
         claimBtn.style.opacity = "1";
       }
     }
+  }
+  function renderAudioCredits() {
+    var container = $("audioCreditsList");
+    if (!container) return;
+    container.innerHTML = "";
+    var tracks = (BB.Music && BB.Music.getTracks) ? BB.Music.getTracks() : [];
+    tracks.forEach(function (t) {
+      var card = document.createElement("div");
+      card.style.cssText = "padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;gap:10px";
+      
+      var isCur = (BB.Music && BB.Music.track === t.id && BB.Music.playing);
+      card.innerHTML = '<div style="flex:1;min-width:0">' +
+        '<div style="font-weight:900;color:' + (isCur ? "#ffd700" : "#00f5d4") + ';font-size:13px">' +
+        (isCur ? "▶ " : "") + t.title + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + t.style + ' • ' + t.bpm + ' BPM • ' + t.key + '</div>' +
+        '<div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:2px">Created by: ' + t.creator + ' (' + t.license + ')</div>' +
+        '</div>' +
+        '<button class="btn-tap" style="font-size:11px;padding:6px 12px;min-height:32px;white-space:nowrap" data-track-id="' + t.id + '">' +
+        (isCur ? "Playing 🎵" : "▶ Play") + '</button>';
+
+      var playBtn = card.querySelector("button");
+      if (playBtn) {
+        playBtn.addEventListener("click", function () {
+          try {
+            BB.Audio.sound.init();
+            BB.Music.play(t.id);
+            announce("🎵 " + t.title, t.style + " (" + t.bpm + " BPM)", "#00f5d4");
+            renderAudioCredits();
+          } catch (e) {}
+        });
+      }
+      container.appendChild(card);
+    });
   }
   function dailyCheck() {
     var st = BB.Rewards.dailyStatus();
