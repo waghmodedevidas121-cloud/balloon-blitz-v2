@@ -149,6 +149,9 @@ function startBlitz() {
   try { BB.Music.play("blitz"); } catch (e) {}
   BB.Ads.notifyRunStart(); lockInput();
   gameMode = "BLITZ"; gameState = "PLAYING"; resetRun(); timeLeft = 65;
+  feverCharge = 10;
+  document.getElementById("mFeverBar").style.width = "10%";
+  document.getElementById("mFeverPct").innerText = "10%";
   BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
   initBalloons(); updateHud(); BB.UI.show(null);
   BB.UI.announce("⚡ BLITZ!", "65 seconds — go!", "#ffd23f");
@@ -199,7 +202,7 @@ function startInfinite() {
   gameMode = "INFINITE"; gameState = "PLAYING"; resetRun(); lives = 4; wave = 1;
   BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
   initBalloons(); updateHud(); BB.UI.show(null);
-  BB.UI.announce("♾️ SURVIVE!", "Protect 4 lives", "#a29bfe");
+  BB.UI.announce("♾️ SURVIVE!", "Wave " + wave + " — protect " + lives + " lives", "#a29bfe");
 }
 function startLevel(id) {
   sound().init();
@@ -280,14 +283,14 @@ function addFever(amt) {
   document.getElementById("mFeverBar").style.width = feverCharge + "%";
   document.getElementById("mFeverPct").innerText = Math.floor(feverCharge) + "%";
   if (feverCharge >= 100) {
-    isFever = true; feverTimer = 7.0; feversThisRun++;
+    isFever = true; feverTimer = 8.0; feversThisRun++;
     BB.Save.data.fevers = (BB.Save.data.fevers || 0) + 1;
     document.body.classList.add("fever-active");
     try { sound().fever(); } catch (e) { sound().victory(); }
     try { BB.Music.setFever(true); } catch (e) {}
     BB.UI.flash(0.4); triggerShake(8, 0.35);
     document.getElementById("mFeverLabel").innerText = "🔥 FEVER x2!";
-    BB.UI.announce("🔥 FEVER MODE!", "2X SCORE — 7s", "#ffd700");
+    BB.UI.announce("🔥 FEVER MODE!", "2X SCORE — 8s", "#ffd700");
     textPopups.push(new MobileTextPopup("FEVER MODE!! 🔥", width / 2, height / 2, "#ffd700", true));
     BB.Rewards.track("fever", 1); BB.Save.save();
     if (gameMode === "LEVELS" && BB.Content.LEVELS[currentLevelId - 1].type === "fever") {
@@ -432,7 +435,7 @@ function popBalloon(b, isChain, chainDepth) {
       burst(bx, by, "#ffd23f", 16, true); burst(bx, by, "#fff6c9", 8); shockwaves.push(new MobileShockwave(bx, by, 64, "#ffd23f")); triggerShake(5 * 1.3, 0.18); spawnRipple(bx, by, "gold"); earnCoins(5);
     } else {
       sound().pop(combo, b.spec.key);
-      burst(bx, by, (BB.Economy.skinColors() || {})[b.spec.key] || b.spec.color, 12); spawnRipple(bx, by, ""); earnCoins(1);
+      burst(bx, by, (BB.Economy.skinColors() || {})[b.spec.key] || b.spec.color, 12); spawnRipple(bx, by, ""); earnCoins(2);
     }
     var pts = (b.spec.points || 10) * combo * (isFever ? 2 : 1);
     score += pts; combo++;

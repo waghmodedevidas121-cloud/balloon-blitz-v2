@@ -7,9 +7,23 @@ BB.UI = (function () {
   var annT = null;
   var currentMapTab = "campaign";
   function $(id) { return document.getElementById(id); }
+  var MODE_COLORS = { BLITZ: "#ffd23f", LEVELS: "#00f5d4", PUZZLE: "#33ff77", SLING: "#f97316" };
+  var MODE_EMOJI = { BLITZ: "⚡", LEVELS: "🎯", PUZZLE: "🧠", SLING: "🏹" };
+  function currentMode() {
+    try {
+      var st = (BB.Engine && BB.Engine.state) ? BB.Engine.state() : null;
+      return (st && st.mode) || "HOME";
+    } catch (e) { return "HOME"; }
+  }
+  function modeColor(mode) { return MODE_COLORS[mode] || "#fff"; }
+  function modeEmoji(mode) { return MODE_EMOJI[mode] || ""; }
+  function ensureEmojiPrefix(title, emoji) {
+    if (!emoji) return title;
+    return (title && title.indexOf(emoji) >= 0) ? title : (emoji + " " + title);
+  }
   function announce(main, sub, color) {
     $("annMain").textContent = main;
-    $("annMain").style.color = color || "#fff";
+    $("annMain").style.color = color || modeColor(document.body.dataset.mode);
     $("annSub").textContent = sub || "";
     var b = $("announceBanner");
     b.classList.add("show"); clearTimeout(annT);
@@ -65,6 +79,12 @@ BB.UI = (function () {
     if (id === "boardScreen") renderBoard("local");
     if (id === "dailyModal") renderDailyGrid();
     if (id === "audioCreditsModal") renderAudioCredits();
+    document.body.dataset.mode = currentMode();
+    var shown = $(id);
+    if (shown && id !== null) {
+      shown.classList.add("screen-enter");
+      setTimeout(function () { shown.classList.remove("screen-enter"); }, 300);
+    }
   }
   function wallet() {
     var u = BB.Save.data;
@@ -109,6 +129,36 @@ BB.UI = (function () {
     });
     var sNext = Math.min(25, Object.keys(sp).filter(function (k) { return sp[k].unlocked; }).length);
     if (sMeta) sMeta.innerText = "Stage " + sNext + "/25 • " + sStars + "/75 ⭐";
+
+    // Mode progress bars on home cards
+    try {
+      var unCleared = Object.keys(u.levelsProgress || {}).filter(function (k) { return u.levelsProgress[k].stars > 0; }).length;
+      var campPct = maxL > 0 ? (unCleared / maxL * 100) : 0;
+      var pzPct = pTotal > 0 ? (pCleared / pTotal * 100) : 0;
+      var sTotalAll = (BB.Content.SLING_STAGES && BB.Content.SLING_STAGES.length) ? BB.Content.SLING_STAGES.length : 25;
+      var slPct = sTotalAll > 0 ? (sCleared / sTotalAll * 100) : 0;
+      var blPct = Math.min(100, ((u.blitzHighScore || 0) / 5000) * 100);
+      var setW = function (id, pct) {
+        var el = $(id);
+        if (el) el.style.width = Math.max(0, Math.min(100, pct)) + "%";
+      };
+      setW("progCampaign", campPct);
+      setW("progPuzzle", pzPct);
+      setW("progSling", slPct);
+      setW("progBlitz", blPct);
+    } catch (e) {}
+
+    // Home continue hint — highest unlocked campaign stage
+    try {
+      var hhC = $("hhContinue");
+      if (hhC) {
+        var hiStage = 1;
+        BB.Content.LEVELS.forEach(function (l) {
+          if (u.levelsProgress[l.id] && u.levelsProgress[l.id].unlocked) hiStage = l.id;
+        });
+        hhC.innerText = "Continue — Stage " + hiStage + " • Tap any mode";
+      }
+    } catch (e) {}
 
     // Update Home daily gift pill in header
     var st = BB.Rewards.dailyStatus();
@@ -612,7 +662,7 @@ BB.UI = (function () {
     var isSling = !!r.isSlingshot;
     var isCamp = !!r.isCampaign || (!isPz && !isSling);
     var tEl = $("mLevelCompleteTitle");
-    if (tEl) tEl.innerText = isPz ? "PUZZLE SOLVED! 🧠" : (isSling ? "TRICKSHOT CLEAR! 🏹" : "STAGE CLEAR! 🎯");
+    if (tEl) tEl.innerText = ensureEmojiPrefix(isPz ? "PUZZLE SOLVED! 🧠" : (isSling ? "TRICKSHOT CLEAR! 🏹" : "STAGE CLEAR! 🎯"), modeEmoji(currentMode()));
     $("mLevelStars").innerText = "⭐".repeat(r.stars) + "☆".repeat(3 - r.stars);
     $("mLevelSummary").innerText = isPz ? ("Cleared in " + r.time + " darts!") : (isSling ? ("Cleared with " + r.time + "!") : ("Stage completed with " + r.time + " moves left!"));
     $("mLevelScoreVal").innerText = r.score;
@@ -658,6 +708,7 @@ BB.UI = (function () {
       t.innerText = "TIME UP!"; s.innerText = "60-second Blitz finished!";
       $("mEndWaveRow").innerText = "🔥 Max combo x" + r.combo;
     }
+    t.innerText = ensureEmojiPrefix(t.innerText, modeEmoji(st.mode));
     if (r.isHigh) BB.Audio.sound.victory();
     show("gameOverScreen");
   }
@@ -844,6 +895,11 @@ BB.UI = (function () {
     });
     document.querySelectorAll(".board-tab").forEach(function (t) {
       t.addEventListener("click", function () { renderBoard(t.dataset.tab); });
+    });
+    document.querySelectorAll(".hh-mode[data-mode]").forEach(function (c) {
+      c.addEventListener("click", function () {
+        document.body.dataset.mode = c.dataset.mode || "HOME";
+      });
     });
     $("btnDailyLater").addEventListener("click", function () { show("homeScreen"); });
     // PLAY burst (display only)

@@ -45,11 +45,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#8FD3FF" />
+<meta name="theme-color" content="#FFF6E1" />
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" href="assets/tex/icon.svg" />
 <link rel="icon" type="image/svg+xml" href="assets/tex/icon.svg" />
-<title>Balloon Blitz</title>
+<title>Balloon Blitz — Ghibli Sky Realms</title>
 <meta name="description" content="An arcade balloon popping game featuring puzzle, campaign, slingshot, and blitz modes." />
 <meta property="og:title" content="Balloon Blitz" />
 <meta property="og:description" content="An arcade balloon popping game featuring puzzle, campaign, slingshot, and blitz modes." />
@@ -71,7 +71,7 @@
 <div id="touchRippleContainer"></div>
 <div id="mobileObjBanner"></div>
 
-<div id="mobileHud" style="display:none">
+<div id="mobileHud" data-hud="top" style="display:none">
   <div class="hud-left">
     <button class="hud-btn-circle" id="hudHomeBtn" title="Pause">⏸️</button>
     <div class="hud-pill" id="hudModePill"><span class="hud-pill-val" id="hudModeVal">BLITZ</span></div>
@@ -141,6 +141,7 @@
     <div class="hh-hero">
       <div class="hh-logo"><span class="hh-logo-top">BALLOON</span><span class="hh-logo-main">BLITZ</span></div>
       <div class="hh-tag">EXPLORE • POP • DISCOVER</div>
+      <div class="hh-sub" id="hhContinue" style="font-size:11px;opacity:.8">Tap a mode to play — progress saves automatically</div>
     </div>
 
     <!-- Big 3D Play Button -->
@@ -150,38 +151,42 @@
 
     <!-- Clean 2x2 Arcade Mode Selector Cards -->
     <div class="hh-modes">
-      <div class="hh-mode mode-puzzle" id="btnPlayPuzzle">
+      <div class="hh-mode mode-puzzle" id="btnPlayPuzzle" data-mode="PUZZLE">
         <div class="hh-mico">🧩</div>
         <div class="hh-mode-content">
           <div class="hh-mtitle">PUZZLE</div>
           <div class="hh-mmeta" id="puzzleMeta">50 Stages</div>
+          <div class="hh-mprogress"><div class="hh-mfill" id="progPuzzle" style="width:0%"></div></div>
         </div>
         <div class="hh-marrow">›</div>
       </div>
 
-      <div class="hh-mode mode-campaign" id="btnPlayLevels">
+      <div class="hh-mode mode-campaign" id="btnPlayLevels" data-mode="LEVELS">
         <div class="hh-mico">🎯</div>
         <div class="hh-mode-content">
           <div class="hh-mtitle">CAMPAIGN</div>
           <div class="hh-mmeta" id="campaignMeta">600 Stages</div>
+          <div class="hh-mprogress"><div class="hh-mfill" id="progCampaign" style="width:0%"></div></div>
         </div>
         <div class="hh-marrow">›</div>
       </div>
 
-      <div class="hh-mode mode-slingshot" id="btnPlaySlingshot">
+      <div class="hh-mode mode-slingshot" id="btnPlaySlingshot" data-mode="SLING">
         <div class="hh-mico">🏹</div>
         <div class="hh-mode-content">
           <div class="hh-mtitle">SLINGSHOT</div>
           <div class="hh-mmeta" id="slingMeta">50 Stages</div>
+          <div class="hh-mprogress"><div class="hh-mfill" id="progSling" style="width:0%"></div></div>
         </div>
         <div class="hh-marrow">›</div>
       </div>
 
-      <div class="hh-mode mode-blitz" id="btnPlayBlitz">
+      <div class="hh-mode mode-blitz" id="btnPlayBlitz" data-mode="BLITZ">
         <div class="hh-mico">⚡</div>
         <div class="hh-mode-content">
           <div class="hh-mtitle">BLITZ</div>
           <div class="hh-mmeta" id="blitzMeta">60s Rush</div>
+          <div class="hh-mprogress"><div class="hh-mfill" id="progBlitz" style="width:0%"></div></div>
         </div>
         <div class="hh-marrow">›</div>
       </div>
