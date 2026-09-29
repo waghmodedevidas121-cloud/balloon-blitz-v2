@@ -298,12 +298,8 @@ BB.UI = (function () {
           announce("🔒 LOCKED", "Clear Stage " + (id - 1) + " first!", "#ff5e7a");
         } else {
           BB.Audio.sound.init();
-          if (selectedCampId === id) {
-            startLevel(id);
-          } else {
-            selectedCampId = id;
-            renderCampaignGrid();
-          }
+          /* Direct play on single tap — no mission card selection step */
+          startLevel(id);
         }
       });
     }
@@ -398,12 +394,8 @@ BB.UI = (function () {
           announce("🔒 LOCKED", "Solve Puzzle " + (id - 1) + " first!", "#ff5e7a");
         } else {
           BB.Audio.sound.init();
-          if (selectedPuzId === id) {
-            BB.Engine.startPuzzle(id);
-          } else {
-            selectedPuzId = id;
-            renderPuzzleGrid();
-          }
+          /* Direct play on single tap */
+          BB.Engine.startPuzzle(id);
         }
       });
     }
@@ -510,12 +502,8 @@ BB.UI = (function () {
           announce("🔒 LOCKED", "Clear Slingshot " + (id - 1) + " first!", "#ff5e7a");
         } else {
           BB.Audio.sound.init();
-          if (selectedSlingId === id) {
-            BB.Engine.startSlingshot(id);
-          } else {
-            selectedSlingId = id;
-            renderSlingshotGrid();
-          }
+          /* Direct play on single tap */
+          BB.Engine.startSlingshot(id);
         }
       });
     }
