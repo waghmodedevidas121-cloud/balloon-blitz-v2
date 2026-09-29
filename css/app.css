@@ -157,7 +157,7 @@ input, textarea, select {
   background: transparent;
 }
 
-/* grain + vignette: atmosphere only, never over gameplay */
+/* grain + vignette + warm Ghibli color grading: atmosphere only, never over gameplay */
 body::before {
   content: "";
   position: fixed;
@@ -165,7 +165,7 @@ body::before {
   z-index: 1;
   pointer-events: none;
   background: var(--tex) repeat 0 0 / 200px 200px;
-  opacity: .05;
+  opacity: .07;
   mix-blend-mode: multiply;
 }
 body::after {
@@ -175,8 +175,12 @@ body::after {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(120% 70% at 50% 0%, rgba(255, 250, 232, .22), transparent 60%),
-    radial-gradient(110% 60% at 50% 100%, rgba(59, 46, 42, .14), transparent 62%);
+    /* warm Ghibli golden bloom at the top */
+    radial-gradient(130% 55% at 50% 0%, rgba(255, 248, 220, .28), transparent 55%),
+    /* soft warm shadow at the bottom */
+    radial-gradient(120% 50% at 50% 100%, rgba(59, 46, 42, .18), transparent 58%),
+    /* subtle warm color overlay — late afternoon feel */
+    linear-gradient(180deg, rgba(255, 245, 220, .08) 0%, rgba(255, 235, 195, .04) 50%, rgba(59, 46, 42, .06) 100%);
 }
 body.bb-playing::before,
 body.bb-playing::after,
@@ -593,6 +597,11 @@ body.fever-active #feverVignette {
   color: var(--sun);
   text-shadow: 0 3px 0 var(--sun-deep), 0 6px 0 rgba(185, 106, 30, .45),
                0 9px 16px rgba(74, 44, 16, .18);
+  animation: heroFloat 4s ease-in-out infinite;
+}
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.01); }
 }
 .hh-tag {
   margin-top: 2px;
@@ -604,6 +613,11 @@ body.fever-active #feverVignette {
   background: rgba(255, 253, 247, .88);
   border: 1.5px solid var(--edge);
   border-radius: 999px;
+  animation: tagGlow 3s ease-in-out infinite alternate;
+}
+@keyframes tagGlow {
+  0% { box-shadow: 0 0 0 transparent; }
+  100% { box-shadow: 0 0 16px rgba(245, 165, 36, .18); }
 }
 
 /* ------------------------------------------------------- primary CTA */

@@ -63,28 +63,74 @@ function getSprite(key, color, kind, radius) {
 
   var outline = getCartoonOutline(color, kind);
 
-  // 2) Bright vibrant cartoon base fill
+  // 2) GHIBLI TOON — flat base + 1 shadow step + rim light (no smooth PBR, no photoreal gradient)
   body();
   if (kind === "bomb") {
-    var bg = g.createRadialGradient(cx - r * 0.3, cy - r * 0.4, r * 0.1, cx, cy, r * 1.2);
-    bg.addColorStop(0, "#3d4257"); bg.addColorStop(0.6, "#222533"); bg.addColorStop(1, "#11131c");
-    g.fillStyle = bg;
+    // toon bomb: flat charcoal + single dark step + warm rim
+    g.fillStyle = "#2a2f45";
+    g.fill();
+    g.save(); body(); g.clip();
+    g.fillStyle = "#1a1d2e";
+    g.beginPath(); g.ellipse(cx + r * 0.22, cy + r * 0.28, r * 1.02, r * 1.06, 0, 0, Math.PI * 2); g.fill();
+    g.globalCompositeOperation = "destination-out";
+    g.beginPath(); g.ellipse(cx - r * 0.08, cy - r * 0.10, r * 0.86, r * 0.92, 0, 0, Math.PI * 2); g.fill();
+    g.restore();
+    // warm rim crescent
+    g.save(); body(); g.clip();
+    g.strokeStyle = "rgba(255,160,90,.42)"; g.lineWidth = Math.max(2.5, r * 0.10); g.lineCap = "round";
+    g.beginPath(); g.arc(cx - r * 0.18, cy - r * 0.22, r * 0.90, Math.PI * 0.78, Math.PI * 1.42); g.stroke();
+    g.restore();
   } else if (kind === "gift") {
-    var gg = g.createRadialGradient(cx - r * 0.3, cy - r * 0.4, r * 0.1, cx, cy, r * 1.2);
-    gg.addColorStop(0, "#a855f7"); gg.addColorStop(0.7, "#7e22ce"); gg.addColorStop(1, "#4c1d95");
-    g.fillStyle = gg;
+    g.fillStyle = "#8b3ddf";
+    g.fill();
+    g.save(); body(); g.clip();
+    g.fillStyle = "#5e20a8";
+    g.beginPath(); g.ellipse(cx + r * 0.20, cy + r * 0.26, r * 1.00, r * 1.04, 0, 0, Math.PI * 2); g.fill();
+    g.globalCompositeOperation = "destination-out";
+    g.beginPath(); g.ellipse(cx - r * 0.07, cy - r * 0.12, r * 0.86, r * 0.92, 0, 0, Math.PI * 2); g.fill();
+    g.restore();
+    g.save(); body(); g.clip();
+    g.strokeStyle = "rgba(255,235,160,.48)"; g.lineWidth = Math.max(2.5, r * 0.10);
+    g.beginPath(); g.arc(cx - r * 0.16, cy - r * 0.20, r * 0.88, Math.PI * 0.80, Math.PI * 1.44); g.stroke();
+    g.restore();
   } else if (kind === "freeze") {
-    var fg = g.createRadialGradient(cx - r * 0.3, cy - r * 0.4, r * 0.1, cx, cy, r * 1.2);
-    fg.addColorStop(0, "#67e8f9"); fg.addColorStop(0.7, "#06b6d4"); fg.addColorStop(1, "#0e7490");
-    g.fillStyle = fg;
+    g.fillStyle = "#4dd7ee";
+    g.fill();
+    g.save(); body(); g.clip();
+    g.fillStyle = "#1e9cb5";
+    g.beginPath(); g.ellipse(cx + r * 0.20, cy + r * 0.26, r * 1.00, r * 1.04, 0, 0, Math.PI * 2); g.fill();
+    g.globalCompositeOperation = "destination-out";
+    g.beginPath(); g.ellipse(cx - r * 0.07, cy - r * 0.12, r * 0.86, r * 0.92, 0, 0, Math.PI * 2); g.fill();
+    g.restore();
+    g.save(); body(); g.clip();
+    g.strokeStyle = "rgba(255,255,255,.62)"; g.lineWidth = Math.max(2.5, r * 0.09);
+    g.beginPath(); g.arc(cx - r * 0.16, cy - r * 0.20, r * 0.88, Math.PI * 0.80, Math.PI * 1.44); g.stroke();
+    g.restore();
   } else {
-    var cg = g.createLinearGradient(0, cy - r * 1.24, 0, cy + r * 1.05);
-    cg.addColorStop(0, mixc(color, [255, 255, 255], 0.22));
-    cg.addColorStop(0.5, color);
-    cg.addColorStop(1, mixc(color, [10, 10, 20], 0.25));
-    g.fillStyle = cg;
+    // normal balloons — exact Ghibli toon: flat fill + one crisp shadow step + rim
+    g.fillStyle = color;
+    g.fill();
+    g.save(); body(); g.clip();
+    var shadow = mixc(color, [42, 28, 22], 0.36);
+    g.fillStyle = shadow;
+    g.beginPath(); g.ellipse(cx + r * 0.22, cy + r * 0.30, r * 1.06, r * 1.12, 0, 0, Math.PI * 2); g.fill();
+    g.globalCompositeOperation = "destination-out";
+    g.beginPath(); g.ellipse(cx - r * 0.06, cy - r * 0.10, r * 0.88, r * 0.94, 0, 0, Math.PI * 2); g.fill();
+    g.restore();
+    // rim light — warm soft highlight on upper-left edge
+    g.save(); body(); g.clip();
+    g.strokeStyle = "rgba(255,252,232,.62)"; g.lineWidth = Math.max(2.2, r * 0.085); g.lineCap = "round";
+    g.beginPath(); g.arc(cx - r * 0.14, cy - r * 0.18, r * 0.92, Math.PI * 0.78, Math.PI * 1.40); g.stroke();
+    g.restore();
+    // subtle painterly grain — single pass brush texture at low opacity
+    g.save(); body(); g.clip();
+    g.globalAlpha = 0.07; g.fillStyle = "rgba(59,46,42,.55)";
+    for (var _g = 0; _g < 3; _g++) {
+      var gx = cx + (Math.random() * r - r * 0.5), gy = cy + (Math.random() * r - r * 0.5);
+      g.fillRect(gx, gy, r * 0.55, 1.1);
+    }
+    g.restore();
   }
-  g.fill();
 
   // 3) ARTWORK DIRECTLY FROM REFERENCE IMAGE:
   if (key === "RED") {
@@ -195,28 +241,36 @@ function getSprite(key, color, kind, radius) {
     g.fillRect(cx - bw / 2, byy - r * 0.07, bw, r * 0.14);
   }
 
-  // 4) SIGNATURE BOLD WHITE CARTOON SHINE
+  // 4) GHIBLI highlight — soft painterly crescent + tiny sparkle (no neon, no bold cartoon arc)
   g.save();
   body();
   g.clip();
-  g.strokeStyle = "rgba(255, 255, 255, 0.92)";
-  g.lineWidth = r * 0.22;
+  g.strokeStyle = "rgba(255,252,232,.58)";
+  g.lineWidth = Math.max(1.8, r * 0.11);
   g.lineCap = "round";
   g.beginPath();
-  g.arc(cx - r * 0.15, cy - r * 0.12, r * 0.76, Math.PI * 0.84, Math.PI * 1.36);
+  g.arc(cx - r * 0.14, cy - r * 0.16, r * 0.72, Math.PI * 0.86, Math.PI * 1.32);
   g.stroke();
-  g.fillStyle = "rgba(255, 255, 255, 0.92)";
+  g.fillStyle = "rgba(255,255,255,.72)";
   g.beginPath();
-  g.arc(cx - r * 0.18, cy - r * 0.88, r * 0.08, 0, Math.PI * 2);
+  g.arc(cx - r * 0.20, cy - r * 0.72, r * 0.055, 0, Math.PI * 2);
   g.fill();
   g.restore();
 
-  // 5) THICK BOLD CARTOON OUTLINE
+  // 5) GHIBLI OUTLINE — consistent 2-2.5px dark outline (inverted-hull style 2D)
   body();
   g.strokeStyle = outline;
-  g.lineWidth = Math.max(3.2, r * 0.11);
+  g.lineWidth = Math.max(2.0, r * 0.095);
   g.lineJoin = "round";
   g.stroke();
+  // inner line for painterly double-stroke feel on large balloons
+  if (r > 28) {
+    g.save(); body(); g.clip();
+    g.strokeStyle = "rgba(59,46,42,.12)";
+    g.lineWidth = 1;
+    g.stroke();
+    g.restore();
+  }
 
   // 6) CUTE FLARED CARTOON KNOT
   var knotColor = kind === "bomb" ? "#1e2233" : mixc(color, [10, 10, 20], 0.28);
@@ -373,14 +427,27 @@ class MobileBalloon {
     var r = this.radius * k;
 
     var sw = Math.sin(this.wobble) * this.radius * 0.22;
+    /* Ghibli organic tilt — balloon leans gently as it sways */
+    var tilt = Math.sin(this.wobble * 0.8) * 0.06;
     ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.lineWidth = 1.5; ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(x, y + r * 1.15);
     ctx.bezierCurveTo(x + sw * 0.4, y + r * 1.5, x - sw * 0.5, y + r * 1.8, x + sw, y + r * 2.15);
     ctx.stroke();
 
+    /* squash-stretch on spawn for organic Ghibli feel */
+    var ss = this.spawnScale;
+    var scaleX = ss < 1 ? (0.7 + 0.3 * ss + 0.1 * Math.sin(ss * Math.PI * 3)) : 1;
+    var scaleY = ss < 1 ? (1.3 - 0.3 * ss - 0.1 * Math.sin(ss * Math.PI * 3)) : 1;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tilt);
+    ctx.scale(scaleX, scaleY);
+    ctx.translate(-x, -y);
+
     drawSprite(x, y, this.radius, this.spawnScale, this.spec.key, base,
       this.spec.isBomb ? "bomb" : this.spec.isGift ? "gift" : this.spec.isGold ? "gold" : this.spec.isFreeze ? "freeze" : "normal");
+    ctx.restore();
 
     if (this.isHazard) {
       ctx.save();

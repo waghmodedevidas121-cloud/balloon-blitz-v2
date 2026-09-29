@@ -249,12 +249,19 @@
       g.globalAlpha = 1;
     }
 
-    /* atmospheric depth: haze thickens toward the horizon */
-    var hz = g.createLinearGradient(0, h * 0.52, 0, h * 0.95);
+    /* Ghibli atmospheric depth: thick warm haze near horizon + secondary warm band */
+    var hz = g.createLinearGradient(0, h * 0.40, 0, h * 0.98);
     hz.addColorStop(0, "rgba(255,255,255,0)");
+    hz.addColorStop(0.5, p.fog.replace(/[\d.]+\)$/, "0.18)"));
     hz.addColorStop(1, p.fog);
     g.fillStyle = hz;
-    g.fillRect(0, h * 0.52, w, h * 0.48);
+    g.fillRect(0, h * 0.40, w, h * 0.60);
+    /* secondary warm golden band at horizon — Shinkai style */
+    var hz2 = g.createLinearGradient(0, h * 0.78, 0, h);
+    hz2.addColorStop(0, "rgba(255,240,200,0)");
+    hz2.addColorStop(1, "rgba(255,232,190,.28)");
+    g.fillStyle = hz2;
+    g.fillRect(0, h * 0.78, w, h * 0.22);
   }
 
   function hillY(x, w, h, yf, amp, phase) {
@@ -514,19 +521,22 @@
     paintSky(skyCache.getContext("2d"), w, h, p);
     landCache = makeCanvas(w, h);
     paintLand(landCache.getContext("2d"), w, h, p);
-    var g = ctx.createRadialGradient(w * 0.5, h * 0.42, Math.min(w, h) * 0.34, w * 0.5, h * 0.5, Math.max(w, h) * 0.8);
+    /* warmer, deeper vignette — Ghibli afternoon glow */
+    var g = ctx.createRadialGradient(w * 0.5, h * 0.38, Math.min(w, h) * 0.28, w * 0.5, h * 0.5, Math.max(w, h) * 0.82);
     g.addColorStop(0, "rgba(0,0,0,0)");
-    g.addColorStop(1, "rgba(59,46,42,.15)");
+    g.addColorStop(0.65, "rgba(59,46,42,.06)");
+    g.addColorStop(1, "rgba(59,46,42,.22)");
     vign = g;
   }
 
   /* ------------------------------------------------------------- entities */
   var clouds = [], birds = [], petals = [], ships = [], sparks = [], stars = [];
+  var fireflies = [], butterflies = [];
   var MUL = { high: 1, med: 0.6, low: 0.3 };
 
   function puffs() {
-    var n = 4 + (Math.random() * 3 | 0), out = [], i;
-    for (i = 0; i < n; i++) out.push([(i - (n - 1) / 2) * 21 + rnd(-5, 5), rnd(-9, 5), rnd(15, 29)]);
+    var n = 6 + (Math.random() * 4 | 0), out = [], i;
+    for (i = 0; i < n; i++) out.push([(i - (n - 1) / 2) * 18 + rnd(-6, 6), rnd(-12, 4), rnd(16, 34)]);
     return out;
   }
 
@@ -590,6 +600,13 @@
     return { x: rnd(0, state.w), y: rnd(0, state.h * 0.7), p: rnd(0, TAU), sz: rnd(0.7, 1.9), sp: rnd(0.4, 1.6) };
   }
 
+  function makeFirefly() {
+    return { x: rnd(state.w * 0.1, state.w * 0.9), y: rnd(state.h * 0.55, state.h * 0.95), p: rnd(0, TAU), sz: rnd(1.8, 3.6), sp: rnd(1.2, 2.8), ox: rnd(-1, 1), oy: rnd(-0.6, 0.6) };
+  }
+  function makeButterfly(spread) {
+    return { x: spread ? rnd(0, state.w) : rnd(-20, state.w * 0.1), y: rnd(state.h * 0.45, state.h * 0.85), vx: rnd(8, 22), vy: rnd(-6, 6), p: rnd(0, TAU), c: pick(["#FFE1ED", "#FFF3C4", "#FFD3A9", "#E2C8FF"]) };
+  }
+
   function seedEntities() {
     var L = state.pal.life, m = MUL[state.tier] || 1, i, n;
     clouds.length = 0;
@@ -610,6 +627,18 @@
     stars.length = 0;
     n = Math.round(L.stars * (state.tier === "low" ? 0.5 : 1));
     for (i = 0; i < n; i++) stars.push(makeStar());
+    /* Ghibli fireflies (sunset + moon/star realms) */
+    fireflies.length = 0;
+    if (state.tod === "sunset" || state.realm === "moon" || state.realm === "star") {
+      n = Math.round((state.small ? 8 : 16) * m);
+      for (i = 0; i < n; i++) fireflies.push(makeFirefly());
+    }
+    /* Ghibli butterflies (day, sunny/cloud/rainbow only) */
+    butterflies.length = 0;
+    if (state.tod === "day" && (state.realm === "sunny" || state.realm === "cloud" || state.realm === "rainbow")) {
+      n = Math.round((state.small ? 3 : 6) * m);
+      for (i = 0; i < n; i++) butterflies.push(makeButterfly(true));
+    }
   }
 
   /* --------------------------------------------------------------- drawing */
@@ -705,17 +734,57 @@
     g.globalAlpha = 1;
   }
 
+  function drawFirefly(g, o) {
+    var pulse = 0.4 + 0.6 * Math.abs(Math.sin(state.t * o.sp + o.p));
+    var fx = o.x + Math.sin(state.t * 0.7 + o.p) * 12 * o.ox;
+    var fy = o.y + Math.cos(state.t * 0.5 + o.p * 1.3) * 8 * o.oy;
+    g.globalAlpha = pulse;
+    var rg = g.createRadialGradient(fx, fy, 0, fx, fy, o.sz * 3.5);
+    rg.addColorStop(0, "rgba(255,248,180,.9)");
+    rg.addColorStop(0.3, "rgba(245,220,120,.4)");
+    rg.addColorStop(1, "rgba(245,220,120,0)");
+    g.fillStyle = rg;
+    g.beginPath(); g.arc(fx, fy, o.sz * 3.5, 0, TAU); g.fill();
+    g.fillStyle = "#FFF8C0";
+    g.beginPath(); g.arc(fx, fy, o.sz * 0.6, 0, TAU); g.fill();
+    g.globalAlpha = 1;
+  }
+
+  function drawButterfly(g, o) {
+    var wing = Math.sin(state.t * 8 + o.p);
+    var bx = o.x, by = o.y + Math.sin(state.t * 1.4 + o.p) * 6;
+    g.save();
+    g.translate(bx, by);
+    g.globalAlpha = 0.78;
+    g.fillStyle = o.c;
+    /* left wing */
+    g.save(); g.scale(wing * 0.5 + 0.5, 1);
+    g.beginPath(); g.ellipse(-3, 0, 4, 6, -0.15, 0, TAU); g.fill();
+    g.restore();
+    /* right wing */
+    g.save(); g.scale(-wing * 0.5 + 0.5, 1);
+    g.beginPath(); g.ellipse(3, 0, 4, 6, 0.15, 0, TAU); g.fill();
+    g.restore();
+    /* body */
+    g.fillStyle = "rgba(59,46,42,.6)";
+    g.fillRect(-0.5, -3, 1, 6);
+    g.restore();
+    g.globalAlpha = 1;
+  }
+
   function drawRays(g, p) {
     var s = p.sun;
     if (!s) return;
-    var sx = state.w * s.x, sy = state.h * s.y, len = Math.max(state.w, state.h) * 1.2, i;
+    var sx = state.w * s.x, sy = state.h * s.y, len = Math.max(state.w, state.h) * 1.4, i;
     g.save();
     g.translate(sx, sy);
-    g.rotate(state.t * 0.012);
-    g.fillStyle = p.ray;
-    for (i = 0; i < 7; i++) {
-      var a = (i / 7) * TAU;
-      var wdt = 0.055 + 0.03 * Math.sin(state.t * 0.5 + i);
+    g.rotate(state.t * 0.010);
+    /* Ghibli-style warm golden rays — wider, softer, more dreamy */
+    for (i = 0; i < 9; i++) {
+      var a = (i / 9) * TAU;
+      var wdt = 0.065 + 0.04 * Math.sin(state.t * 0.38 + i * 1.3);
+      var alpha = 0.12 + 0.06 * Math.sin(state.t * 0.6 + i);
+      g.fillStyle = p.ray.replace(/[\d.]+\)$/, alpha + ")");
       g.beginPath();
       g.moveTo(0, 0);
       g.lineTo(Math.cos(a - wdt) * len, Math.sin(a - wdt) * len);
@@ -723,6 +792,14 @@
       g.closePath();
       g.fill();
     }
+    /* soft bloom glow around sun center */
+    var bloom = g.createRadialGradient(0, 0, 0, 0, 0, Math.min(state.w, state.h) * 0.18);
+    bloom.addColorStop(0, "rgba(255,250,230,.22)");
+    bloom.addColorStop(1, "rgba(255,250,230,0)");
+    g.fillStyle = bloom;
+    g.beginPath();
+    g.arc(0, 0, Math.min(state.w, state.h) * 0.18, 0, TAU);
+    g.fill();
     g.restore();
   }
 
@@ -784,6 +861,19 @@
         petals[i].x = rnd(-0.15 * w, w);
       }
     }
+    /* fireflies drift slowly */
+    for (i = 0; i < fireflies.length; i++) {
+      o = fireflies[i];
+      o.x += Math.sin(state.t * 0.3 + o.p) * 0.3;
+      o.y += Math.cos(state.t * 0.2 + o.p * 1.1) * 0.2;
+    }
+    /* butterflies float rightward */
+    for (i = 0; i < butterflies.length; i++) {
+      o = butterflies[i];
+      o.x += o.vx * dt;
+      o.y += o.vy * dt + Math.sin(state.t * 1.2 + o.p) * 0.4;
+      if (o.x > w + 20) { butterflies[i] = makeButterfly(false); }
+    }
   }
 
   function render() {
@@ -799,6 +889,10 @@
     for (i = 0; i < birds.length; i++) drawFlock(g, birds[i], p);
     for (i = 0; i < petals.length; i++) drawPetal(g, petals[i]);
     if (sparks.length) for (i = 0; i < sparks.length; i++) drawTwinkle(g, sparks[i], p.warm, 0.42);
+    /* Ghibli fireflies */
+    for (i = 0; i < fireflies.length; i++) drawFirefly(g, fireflies[i]);
+    /* Ghibli butterflies */
+    for (i = 0; i < butterflies.length; i++) drawButterfly(g, butterflies[i]);
     g.fillStyle = vign;
     g.fillRect(0, 0, state.w, state.h);
   }
@@ -914,7 +1008,8 @@
 
   function boot() {
     var hh = new Date().getHours();
-    state.tod = hh >= 17 && hh < 21 ? "sunset" : "day";
+    /* Ghibli time-of-day: golden afternoon / warm sunset / night */
+    state.tod = (hh >= 17 && hh < 21) ? "sunset" : "day";
     mount();
     applyPalette();
     resize();
@@ -924,6 +1019,12 @@
     document.addEventListener("visibilitychange", function () {
       if (document.hidden) pause(); else resume();
     });
+    /* auto-cycle time-of-day every 2 minutes for cinematic feel */
+    setInterval(function () {
+      var nh = new Date().getHours();
+      var nt = (nh >= 17 && nh < 21) ? "sunset" : "day";
+      if (nt !== state.tod) setTod(nt);
+    }, 120000);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

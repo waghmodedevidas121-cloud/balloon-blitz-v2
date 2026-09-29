@@ -535,6 +535,86 @@ BB.Audio = (function () {
     } catch (e) {}
   };
 
+  /* =========== GHIBLI COUNTRYSIDE AMBIENT LAYER ===========
+     Soft wind (filtered noise) + random bird chirps. Starts on first
+     user interaction, runs continuously at low volume behind everything. */
+  MobileAudio.prototype._ambientStarted = false;
+  MobileAudio.prototype.startAmbient = function () {
+    if (this._ambientStarted || !this.ctx) return;
+    this._ambientStarted = true;
+    var ctx = this.ctx;
+
+    /* --- wind: brown noise through a gentle bandpass --- */
+    var bufLen = ctx.sampleRate * 2;
+    var buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    var last = 0;
+    for (var i = 0; i < bufLen; i++) {
+      var w = (Math.random() * 2 - 1);
+      last = (last + (0.02 * w)) / 1.02;
+      d[i] = last * 3.5;
+    }
+    var windSrc = ctx.createBufferSource();
+    windSrc.buffer = buf;
+    windSrc.loop = true;
+    var windFilter = ctx.createBiquadFilter();
+    windFilter.type = "lowpass";
+    windFilter.frequency.value = 320;
+    windFilter.Q.value = 0.7;
+    var windGain = ctx.createGain();
+    windGain.gain.value = 0.035;
+    windSrc.connect(windFilter);
+    windFilter.connect(windGain);
+    windGain.connect(ctx.destination);
+    windSrc.start(0);
+    this._windGain = windGain;
+
+    /* --- bird chirps: random oscillator bursts every 3-8s --- */
+    var self = this;
+    function chirp() {
+      if (self.muted || !self.settings().sound) {
+        setTimeout(chirp, 4000 + Math.random() * 5000);
+        return;
+      }
+      try {
+        var t = ctx.currentTime;
+        var freq = 2200 + Math.random() * 1800;
+        for (var c = 0; c < 2 + Math.floor(Math.random() * 3); c++) {
+          var ct = t + c * (0.08 + Math.random() * 0.06);
+          var o = ctx.createOscillator();
+          var g = ctx.createGain();
+          o.type = "sine";
+          o.frequency.setValueAtTime(freq + Math.random() * 400, ct);
+          o.frequency.exponentialRampToValueAtTime(freq * (1.1 + Math.random() * 0.4), ct + 0.06);
+          g.gain.setValueAtTime(0.018 + Math.random() * 0.012, ct);
+          g.gain.exponentialRampToValueAtTime(0.001, ct + 0.09);
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start(ct);
+          o.stop(ct + 0.1);
+        }
+      } catch (e) {}
+      setTimeout(chirp, 3000 + Math.random() * 6000);
+    }
+    setTimeout(chirp, 1500 + Math.random() * 3000);
+  };
+
   var sound = new MobileAudio();
+  /* auto-start ambient on first user gesture */
+  var _ambientBound = false;
+  function _tryAmbient() {
+    if (!_ambientBound) return;
+    sound.init();
+    sound.startAmbient();
+  }
+  if (typeof document !== "undefined") {
+    _ambientBound = true;
+    ["click", "touchstart", "pointerdown", "keydown"].forEach(function (ev) {
+      document.addEventListener(ev, function _ab() {
+        _tryAmbient();
+        document.removeEventListener(ev, _ab);
+      }, { once: true, passive: true });
+    });
+  }
   return { sound: sound };
 })();
