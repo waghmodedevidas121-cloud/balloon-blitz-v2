@@ -39,7 +39,14 @@ class LaserBeam {
   update(dt) { this.life -= dt; }
   draw() {
     ctx.save(); ctx.globalAlpha = Math.max(0, this.life / 0.25);
-    ctx.strokeStyle = "#00f5d4"; ctx.lineWidth = 14;
+    ctx.strokeStyle = "#00f5d4";
+    // outer glow stroke
+    ctx.globalAlpha = Math.max(0, this.life / 0.25) * 0.3;
+    ctx.lineWidth = 28;
+    ctx.beginPath(); ctx.moveTo(this.x, height); ctx.lineTo(this.x, 0); ctx.stroke();
+    // main beam stroke
+    ctx.globalAlpha = Math.max(0, this.life / 0.25);
+    ctx.lineWidth = 18;
     ctx.shadowColor = "#00f5d4"; ctx.shadowBlur = 24;
     ctx.beginPath(); ctx.moveTo(this.x, height); ctx.lineTo(this.x, 0); ctx.stroke();
     ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4; ctx.stroke(); ctx.restore();
@@ -60,18 +67,18 @@ function grantAbility(b) {
 }
 function collectDrop(d) {
   if (d.type.id === "time") {
-    timeLeft += 10; sfxPowerup();
-    textPopups.push(new MobileTextPopup("+10s ⏱️", d.x, d.y - 20, "#33ff77", true));
+    timeLeft += 12; sfxPowerup();
+    textPopups.push(new MobileTextPopup("+12s ⏱️", d.x, d.y - 20, "#33ff77", true));
   } else if (d.type.id === "life") {
-    lives = Math.min(3, lives + 1); sfxPowerup();
-    textPopups.push(new MobileTextPopup("+1 LIFE ❤️", d.x, d.y - 20, "#ff5e7a", true));
+    lives = Math.min(5, lives + 1); score += 200; sfxPowerup();
+    textPopups.push(new MobileTextPopup("+1 LIFE ❤️ +200", d.x, d.y - 20, "#ff5e7a", true));
   } else activateWeapon(d.type.id, d.x, d.y);
   updateHud();
 }
 function activateWeapon(id, x, y) {
   var p = BB.Content.POWERUPS.filter(function (q) { return q.id === id; })[0];
   if (!p) return;
-  currentWeapon = id; weaponTimer = 10; weaponShownSec = -1;
+  currentWeapon = id; weaponTimer = 12; weaponShownSec = -1;
   sfxPowerup();
   textPopups.push(new MobileTextPopup(p.name.toUpperCase() + "! " + p.icon, x, y - 24, p.color, true));
   updateWeaponBadge();
@@ -92,9 +99,18 @@ function updateWeaponBadge() {
 }
 function burst(x, y, color, n, heavy) {
   if (!effectsOn()) n = Math.min(n, 8);
+  n = Math.round(n * 1.4);
   for (var i = 0; i < n; i++) {
     if (particles.length > 320) particles.shift();
     particles.push(new MobileParticle(x, y, color, heavy));
+  }
+  // confetti ring — 5 particles at fixed angles expanding evenly outward
+  for (var ri = 0; ri < 5; ri++) {
+    if (particles.length > 320) particles.shift();
+    var rp = new MobileParticle(x, y, color, heavy);
+    var ra = (ri / 5) * Math.PI * 2;
+    rp.vx = Math.cos(ra) * 5; rp.vy = Math.sin(ra) * 5;
+    particles.push(rp);
   }
 }
 function triggerShake(i, du) {
@@ -132,10 +148,10 @@ function startBlitz() {
   sound().init();
   try { BB.Music.play("blitz"); } catch (e) {}
   BB.Ads.notifyRunStart(); lockInput();
-  gameMode = "BLITZ"; gameState = "PLAYING"; resetRun(); timeLeft = 60;
+  gameMode = "BLITZ"; gameState = "PLAYING"; resetRun(); timeLeft = 65;
   BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
   initBalloons(); updateHud(); BB.UI.show(null);
-  BB.UI.announce("⚡ BLITZ!", "60 seconds — go!", "#ffd23f");
+  BB.UI.announce("⚡ BLITZ!", "65 seconds — go!", "#ffd23f");
 }
 function initSlingshotStage(id) {
   balloons.length = 0;
@@ -180,10 +196,10 @@ function startInfinite() {
   sound().init();
   try { BB.Music.play("survival"); } catch (e) {}
   BB.Ads.notifyRunStart(); lockInput();
-  gameMode = "INFINITE"; gameState = "PLAYING"; resetRun(); lives = 3; wave = 1;
+  gameMode = "INFINITE"; gameState = "PLAYING"; resetRun(); lives = 4; wave = 1;
   BB.Save.data.gamesPlayed = (BB.Save.data.gamesPlayed || 0) + 1; BB.Save.save();
   initBalloons(); updateHud(); BB.UI.show(null);
-  BB.UI.announce("♾️ SURVIVE!", "Protect 3 lives", "#a29bfe");
+  BB.UI.announce("♾️ SURVIVE!", "Protect 4 lives", "#a29bfe");
 }
 function startLevel(id) {
   sound().init();
@@ -358,7 +374,7 @@ function popBalloon(b, isChain, chainDepth) {
     if (b.spec.isBomb || d === "ALL") {
       sound().bomb();
       BB.Save.data.bombsPopped = (BB.Save.data.bombsPopped || 0) + 1;
-      triggerShake(12, 0.35); BB.UI.flash(0.2);
+      triggerShake(12 * 1.3, 0.35); BB.UI.flash(0.2);
       shockwaves.push(new MobileShockwave(bx, by, 180, "#ff5e3a"));
       var allDirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
       allDirs.forEach(function (pair) {
@@ -388,7 +404,7 @@ function popBalloon(b, isChain, chainDepth) {
   }
   if (b.spec.isBomb) {
     sound().bomb(); BB.Save.data.bombsPopped = (BB.Save.data.bombsPopped || 0) + 1;
-    triggerShake(14, 0.4); BB.UI.flash(0.25);
+    triggerShake(14 * 1.3, 0.4); BB.UI.flash(0.25);
     shockwaves.push(new MobileShockwave(bx, by, 220, "#ff5e3a"));
     burst(bx, by, "#ff5e3a", 18, true); burst(bx, by, "#ffd23f", 10, true); textPopups.push(new MobileTextPopup("BOOM! 💥", bx, by - 20, "#ff4444", true));
     spawnRipple(bx, by, "bomb"); earnCoins(2);
@@ -413,7 +429,7 @@ function popBalloon(b, isChain, chainDepth) {
   } else {
     if (b.spec.isGold) {
       try { sound().gold(); } catch (e) { sound().pop(combo, "GOLD"); }
-      burst(bx, by, "#ffd23f", 16, true); burst(bx, by, "#fff6c9", 8); shockwaves.push(new MobileShockwave(bx, by, 64, "#ffd23f")); triggerShake(5, 0.18); spawnRipple(bx, by, "gold"); earnCoins(5);
+      burst(bx, by, "#ffd23f", 16, true); burst(bx, by, "#fff6c9", 8); shockwaves.push(new MobileShockwave(bx, by, 64, "#ffd23f")); triggerShake(5 * 1.3, 0.18); spawnRipple(bx, by, "gold"); earnCoins(5);
     } else {
       sound().pop(combo, b.spec.key);
       burst(bx, by, (BB.Economy.skinColors() || {})[b.spec.key] || b.spec.color, 12); spawnRipple(bx, by, ""); earnCoins(1);
@@ -424,6 +440,18 @@ function popBalloon(b, isChain, chainDepth) {
     if (combo > BB.Save.data.maxCombo) BB.Save.data.maxCombo = combo;
     comboTimer = 2.4;
     textPopups.push(new MobileTextPopup("+" + pts, bx, by - 15, b.spec.isGold ? "#ffd700" : "#ffffff"));
+    if (combo === 5) {
+      earnCoins(2);
+      BB.UI.announce("COMBO x5!", "Nice streak!", "#ffd23f");
+    } else if (combo === 10) {
+      earnCoins(5);
+      textPopups.push(new MobileTextPopup("SUPER COMBO! 🔥", bx, by - 30, "#ffd700", true));
+      BB.UI.announce("SUPER COMBO!", "x10 — amazing!", "#ffd700");
+    } else if (combo === 15) {
+      earnCoins(10);
+      addFever(15);
+      BB.UI.announce("COMBO x15!", "Fever boost!", "#c26bff");
+    }
     if (combo === 8 || combo === 12 || combo === 20) BB.UI.announce("⚡ COMBO x" + combo, "Keep popping!", "#00f5d4");
     if (gameMode === "LEVELS") {
       var cur = BB.Content.LEVELS[currentLevelId - 1];
@@ -465,7 +493,9 @@ function popBalloon(b, isChain, chainDepth) {
     wave++;
     if (wave > BB.Save.data.maxWave) BB.Save.data.maxWave = wave;
     earnCoins(10); triggerShake(6, 0.25);
-    BB.UI.announce("🌊 WAVE " + wave, "Speed up!", "#ffd23f");
+    // Difficulty ceiling: wave number still rises, but balloon speed bonus
+    // caps after wave 8 (see MobileBalloon.reset in engine.js).
+    BB.UI.announce("🌊 WAVE " + wave, wave > 8 ? "Max speed!" : "Speed up!", "#ffd23f");
     textPopups.push(new MobileTextPopup("WAVE " + wave + "! ⚡", width / 2, height / 2, "#ffd23f", true));
   }
   updateHud();
@@ -820,10 +850,17 @@ function fireAt(px, py) {
     burst(px, py, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd000", 14);
     textPopups.push(new MobileTextPopup("-1 HP! " + (bossBalloon.isMidBoss ? "💀" : "👑"), px, py - 20, "#ff4444"));
     levelProgressCount++;
+    if (bossBalloon.hp <= maxBossHp * 0.25 && bossBalloon.hp > 0 && !bossBalloon.enraged) {
+      bossBalloon.enraged = true;
+      bossBalloon.vx *= 2; bossBalloon.vy *= 2;
+      BB.UI.announce("BOSS ENRAGED!", "Speed doubled!", "#ff3366");
+      textPopups.push(new MobileTextPopup("RAGE MODE! 😡", bossBalloon.x, bossBalloon.y - 30, "#ff3366", true));
+    }
     if (bossBalloon.hp <= 0) {
       bossBalloon.popped = true;
-      burst(bossBalloon.x, bossBalloon.y, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd700", 45, true);
+      burst(bossBalloon.x, bossBalloon.y, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd700", 65, true);
       shockwaves.push(new MobileShockwave(bossBalloon.x, bossBalloon.y, 250, bossBalloon.isMidBoss ? "#ff5e7a" : "#ffd700"));
+      textPopups.push(new MobileTextPopup("BOSS DEFEATED!", bossBalloon.x, bossBalloon.y - 30, "#ffd700", true));
       try { sound().bossDefeat(bossBalloon.isMidBoss); } catch (e) { sound().victory(); }
       setTimeout(checkLevelWin, 350);
     }

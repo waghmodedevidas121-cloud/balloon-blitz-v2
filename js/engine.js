@@ -363,7 +363,10 @@ class MobileBalloon {
       var extraY = (gameMode === "LEVELS") ? (60 + Math.random() * 200) : (Math.random() * 80);
       this.y = height + this.radius + 20 + extraY;
     }
-    var bonus = (gameMode === "INFINITE") ? (wave - 1) * 0.35 : 0;
+    // Difficulty ceiling: speed bonus stops scaling after wave 8 so late waves
+    // stay challenging but fair instead of becoming impossible.
+    var speedWave = Math.min(wave, 8);
+    var bonus = (gameMode === "INFINITE") ? (speedWave - 1) * 0.35 : 0;
     var spdMult = (curLvl && curLvl.speedMult) || 1.0;
     if (gameMode === "LEVELS") {
       // Gentle, slow tactical cruising speed (approx 45% of arcade rush)
@@ -435,6 +438,24 @@ class MobileBalloon {
     ctx.bezierCurveTo(x + sw * 0.4, y + r * 1.5, x - sw * 0.5, y + r * 1.8, x + sw, y + r * 2.15);
     ctx.stroke();
 
+    /* ghost blink — every 6 wobble units, briefly turn semi-transparent */
+    var ghostBlink = (this.wobble % 6) > 4.5;
+    if (ghostBlink) ctx.globalAlpha = 0.4;
+
+    /* rainbow shimmer behind gold balloons — hue rotates with the wobble */
+    if (this.spec.isGold) {
+      ctx.save();
+      var rHue = (this.wobble * 40) % 360;
+      ctx.globalAlpha = ghostBlink ? 0.4 : 0.35;
+      ctx.strokeStyle = "hsla(" + rHue + ",85%,62%,1)";
+      ctx.lineWidth = Math.max(3, r * 0.14);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.arc(x, y, r * 1.12, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     /* squash-stretch on spawn for organic Ghibli feel */
     var ss = this.spawnScale;
     var scaleX = ss < 1 ? (0.7 + 0.3 * ss + 0.1 * Math.sin(ss * Math.PI * 3)) : 1;
@@ -448,6 +469,7 @@ class MobileBalloon {
     drawSprite(x, y, this.radius, this.spawnScale, this.spec.key, base,
       this.spec.isBomb ? "bomb" : this.spec.isGift ? "gift" : this.spec.isGold ? "gold" : this.spec.isFreeze ? "freeze" : "normal");
     ctx.restore();
+    ctx.globalAlpha = 1;
 
     if (this.isHazard) {
       ctx.save();
